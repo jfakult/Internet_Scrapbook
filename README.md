@@ -1,0 +1,1 @@
+https://fakult.net/scrapbook/

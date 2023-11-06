@@ -6,7 +6,8 @@ import { initGUI } from './gui.js';
 const gui_settings = {
     NUM_BONES: 12, // Default number of bones
     WIGGLE_MAGNITUDE: 0.03, // Default wiggle magnitude
-    SHOW_TEXTURE: true // Default state for showing texture
+    SHOW_TEXTURE: true, // Default state for showing texture
+    SHOW_BONES: false,
 };
 
 // A3 size (assuming units here are inches)
@@ -54,8 +55,12 @@ function toggleTexture(value) {
     gui_settings.SHOW_TEXTURE = value;
     init()
 }
+function toggleBones(value) {
+    gui_settings.SHOW_BONES = value;
+    init()
+}
 // Initialize the GUI
-initGUI(gui_settings, updateNumberOfBones, updateWiggleMagnitude, toggleTexture);
+initGUI(gui_settings, updateNumberOfBones, updateWiggleMagnitude, toggleTexture, toggleBones);
 
 function cleanupScene()
 {
@@ -98,6 +103,11 @@ function init()
         //tex.repeat.set(4, 4); // Repeat the texture 4 times in each direction
     });
 
+    // Create a sphere for each bone
+    const sphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+    const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+
+
     bones = [];
     const boneWidth = paperWidth / gui_settings.NUM_BONES
 
@@ -113,6 +123,14 @@ function init()
         {
             bone.position.x = boneWidth//boneX
             bones[i-1].add(bone)
+        }
+
+        if (gui_settings.SHOW_BONES)
+        {
+            // Add a sphere to visualize the bone
+            let sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere.name = "boneSphere" + i
+            scene.add(sphere)
         }
     }
 
@@ -193,19 +211,24 @@ function animate() {
 
 function wiggle()
 {
-    // Get the elapsed time
   let time = Date.now() * 0.001;
 
   // Iterate over each bone and apply the wiggle effect
   for (let i = 0; i < bones.length; i++)
   {
-    // Calculate the wiggle magnitude
-    
     // Apply the rotation wiggle based on a sine wave
     let sineValue = (Math.sin(time)**2) * (i * gui_settings.WIGGLE_MAGNITUDE);
     
     bones[i].rotation.y = -sineValue;
     bones[i].rotation.x = sineValue * 0.1;
+
+    if (gui_settings.SHOW_BONES)
+    {
+        // update boneSphere positions
+        const position = new THREE.Vector3();
+        scene.getObjectByName("boneSphere" + i).position.setFromMatrixPosition( bones[i].matrixWorld );
+    }
+
   }
 }
 

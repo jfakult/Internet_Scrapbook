@@ -1,14 +1,16 @@
-import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-import Paper from './Paper.js';
 import { initGUI } from './Gui.js';
+import * as THREE from 'three';
+import Paper from './Paper.js';
+import Cover from './Cover.js';
 
 const gui_settings = {
     NUM_BONES: 12, // Default number of bones
     WIGGLE_MAGNITUDE: 0.03, // Default wiggle magnitude
     SHOW_TEXTURE: true, // Default state for showing texture
     SHOW_BONES: false,
+    SHOW_COVER: true,
+    BOOK_OPEN: false,
 };
 
 const renderer = new THREE.WebGLRenderer();
@@ -55,8 +57,16 @@ function toggleBones(value) {
     gui_settings.SHOW_BONES = value;
     init()
 }
+function toggleCover(value) {
+    gui_settings.SHOW_COVER = value;
+    init()
+}
+function toggleBookOpen(value) {
+    gui_settings.BOOK_OPEN = value;
+    
+}
 // Initialize the GUI
-initGUI(gui_settings, updateNumberOfBones, updateWiggleMagnitude, toggleTexture, toggleBones);
+initGUI(gui_settings, updateNumberOfBones, updateWiggleMagnitude, toggleTexture, toggleBones, toggleCover, toggleBookOpen);
 
 function cleanupScene()
 {
@@ -85,7 +95,8 @@ function cleanupScene()
     }
 }
 
-let papers = []
+let cover;
+let papers = [];
 function init()
 {
     cleanupScene()
@@ -98,12 +109,25 @@ function init()
         WIGGLE_MAGNITUDE : gui_settings.WIGGLE_MAGNITUDE,
         SHOW_TEXTURE : gui_settings.SHOW_TEXTURE,
         SHOW_BONES : gui_settings.SHOW_BONES,
-        textureFile : "images/paper.jpg"
+        textureFile: "images/paper.jpg",
     }
 
-
+    const coverOptions = {
+        // A3 size (assuming units here are inches)
+        coverWidth : 12.69,
+        coverHeight: 17.54,
+        BOOK_DEPTH: 5,
+        COVER_THICKNESS: 0.3,
+        SHOW_TEXTURE: gui_settings.SHOW_TEXTURE,
+        BOOK_OPEN: gui_settings.BOOK_OPEN,
+        textureFile : "images/cover.jpg"
+    }
 
     const paper = new Paper(THREE, scene, paperOptions)
+
+    if (gui_settings.SHOW_COVER) {
+        cover = new Cover(THREE, scene, coverOptions)
+    }
 
     papers.push(paper)
 
@@ -115,7 +139,11 @@ function animate() {
 
     controls.update();
 
-    papers.forEach(paper => paper.update() )
+    cover.update(gui_settings.BOOK_OPEN);
+    
+    papers.forEach(paper => paper.update())
+
+
 
 	renderer.render( scene, camera );
 }

@@ -1,12 +1,18 @@
-import { Helpers } from './Helpers.js';
+import Helpers from './Helpers.js';
 
 class Paper {
-    constructor(THREE, scene, options) {
+    constructor(THREE, scene, options, pagePosition) {
         this.THREE = THREE;
         this.scene = scene;
 
+        this.helpers = new Helpers();
+
         this.options = options;
+        this.pagePosition = pagePosition; // value between 0-1 representing the pages position in the book
         this.geometry = new THREE.PlaneGeometry(this.options.paperWidth, this.options.paperHeight, this.options.NUM_BONES, 1);
+        this.geometry.translate(0, 0, (this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * (this.pagePosition - 0.5));
+        this.rootPosition = undefined; // Initialize in buildSkeleton
+        this.lastCoverOpenAmount = undefined;
 
         const loader = new THREE.TextureLoader();
         this.texture = loader.load(options.textureFile, function (tex) {
@@ -15,11 +21,13 @@ class Paper {
             //tex.repeat.set(4, 4); // Repeat the texture 4 times in each direction
         });
 
+        this.boneSpheres = [];
+
         this.skeleton = this.buildSkeleton(this.options.NUM_BONES, this.options.paperWidth, this.options.SHOW_BONES);
         this.skinIndicesAndWeights = this.buildSkinIndicesAndWeights(this.geometry, this.options.paperWidth, this.options.NUM_BONES);
         this.mesh = this.buildMesh(this.geometry, this.skeleton, this.skinIndicesAndWeights["indices"], this.skinIndicesAndWeights["weights"]);
 
-        this.scene.add(this.mesh);
+        //this.scene.add(this.mesh);
     }
 
     buildSkeleton(num_bones, paperWidth, show_bones) {
@@ -28,6 +36,12 @@ class Paper {
         for (let i = 0; i < num_bones; i++) {
             let bone = new this.THREE.Bone();
             bone.position.x = -(paperWidth / 2) + boneWidth / 2;
+
+            if (i == 0)
+            {
+                bone.position.z = (this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * (this.pagePosition - 0.5);
+                this.rootPosition = bone.position.clone();
+            }
             // Can be optimized?
             bones.push(bone);
             if (i > 0) {
@@ -41,7 +55,8 @@ class Paper {
                 const sphereMaterial = new this.THREE.MeshBasicMaterial({ color: 0x00ff00 });
                 let sphere = new this.THREE.Mesh(sphereGeometry, sphereMaterial);
                 sphere.name = "boneSphere" + i;
-                this.scene.add(sphere);
+                this.boneSpheres.push(sphere);
+                //this.scene.add(sphere);
             }
         }
 
@@ -100,7 +115,7 @@ class Paper {
             material = new this.THREE.MeshBasicMaterial({ map: this.texture, side: this.THREE.DoubleSide });
         }
         else {
-            material = new this.THREE.MeshBasicMaterial({ color: 0xffffff, side: this.THREE.DoubleSide, wireframe: true });
+            material = new this.THREE.MeshBasicMaterial({ color: 0xffaaaa, side: this.THREE.DoubleSide, wireframe: true });
         }
 
         geometry.setAttribute('skinIndex', new this.THREE.Uint16BufferAttribute(indices, 4));
@@ -114,20 +129,74 @@ class Paper {
         return mesh
     }
 
-    update() {
+    // As the cover opens, the spine should rotate around the y axis
+    // We need to move the paper to give the appearance that it is bound to the spine
+    translateToSpine(bone, rootBoneRotation, amount) {
+        const distanceToSpineZ = this.rootPosition.z + this.options.BOOK_DEPTH / 2;
+        const distanceToSpineX = this.options.COVER_THICKNESS / 2;
+        const distanceToRotationPoint = Math.sqrt(distanceToSpineZ * distanceToSpineZ + distanceToSpineX * distanceToSpineX);
+
+        // X follows the circular path swept out by the spine (plus some extra space for the cover)
+        let overX = -distanceToRotationPoint * Math.sin((Math.PI / 2) * amount);
+        
+        // Z goes from pagePosition to (0 + this.options.COVER_THICKNESS)
+        let overZ = -distanceToRotationPoint * (1 - Math.cos((Math.PI / 2) * amount)) + (this.options.COVER_THICKNESS / 2) * amount;
+
+        // Also need to add translation because each bone segment has a width
+        const boneHalfWidth = (this.options.paperWidth / this.options.NUM_BONES) / 2 + 0.01;
+        overX -= boneHalfWidth * (1 - Math.cos(rootBoneRotation)) * amount
+        overZ += boneHalfWidth * Math.sin(rootBoneRotation) * amount
+
+        bone.position.x = this.rootPosition.x + overX;
+        bone.position.z = this.rootPosition.z + overZ;
+    }
+
+    // As the cover opens, pages will have to bend around each other to flatten out again
+    // Here we rotate the root bone a certain amount (depending on page position)
+    // The the next few bones (depending on amount) rotate back to flat
+    rotateAroundOtherPages(skeleton, rootBoneRotation, amount) {
+        // Flat when closed, rotated when open
+        skeleton.bones[0].rotation.y = -rootBoneRotation * amount;
+
+        // Now we will slightly bend them back until the remaining part of the paper is flat
+        // Math is used here so that the pages bend back more quickly at first, then slow down as they approach flat, but their sum always leaves the paper perfectly flat
+        let totalRotation = 0;
+        const decayRate = 0.8;
+        const n = skeleton.bones.length / 2; // Number of bones to apply rotation (excluding the first one)
+        // Calculate the sum of the geometric series
+        // We use this sum to normalize the inverted rotations to ensure the page ends up flat
+        const sumOfSeries = (1 - Math.pow(decayRate, n)) / (1 - decayRate);
+
+        // Rotate each subsequent bone back a little to flatten the paper
+        // Apply the exponential decay and normalize to rootBoneRotation
+        for (let i = 1; i <= n; i++)
+        {
+            const boneRotation = (Math.pow(decayRate, i - 1) / sumOfSeries) * rootBoneRotation;
+            skeleton.bones[i].rotation.y = boneRotation * amount;
+        }
+    }
+
+    update(coverOpenAmount) {
         let time = Date.now() * 0.001;
 
-        // Iterate over each bone and apply the wiggle effect
-        for (let i = 0; i < this.skeleton.bones.length; i++) {
-            // Apply the rotation wiggle based on a sine wave
-            let sineValue = (Math.sin(time) ** 2) * (i * this.options.WIGGLE_MAGNITUDE);
+        if (coverOpenAmount != this.lastCoverOpenAmount) {
+            // Set the bounds for the rotation
+            // Thin book will have papers less bent around each other
+            // Cap the max at 90 degrees for now
+            const minRotation = Math.PI / 32 * (this.options.BOOK_DEPTH / 5);
+            const maxRotation = Math.min(Math.PI / 2 * (this.options.BOOK_DEPTH / 5), Math.PI / 2);
+            const rootBoneRotation = minRotation + this.pagePosition * (maxRotation - minRotation); // min degrees for back pages, max degrees for front pages
 
-            this.skeleton.bones[i].rotation.y = -sineValue;
-            this.skeleton.bones[i].rotation.x = sineValue * 0.1;
+            this.translateToSpine(this.skeleton.bones[0], rootBoneRotation, coverOpenAmount);
+            this.rotateAroundOtherPages(this.skeleton, rootBoneRotation, coverOpenAmount);
+        }
 
-            if (this.options.SHOW_BONES) {
-                // update boneSphere positions
-                this.scene.getObjectByName("boneSphere" + i).position.setFromMatrixPosition(this.skeleton.bones[i].matrixWorld);
+        this.lastCoverOpenAmount = coverOpenAmount;
+
+        if (this.options.SHOW_BONES)
+        {
+            for (let i = 0; i < this.boneSpheres.length; i++) {
+                this.boneSpheres[i].position.setFromMatrixPosition(this.skeleton.bones[i].matrixWorld);
             }
         }
     }

@@ -5,8 +5,9 @@ import Paper from './Paper.js';
 import Cover from './Cover.js';
 
 const gui_settings = {
+    NUM_PAGES: 4, // Default number of pages
     NUM_BONES: 12, // Default number of bones
-    WIGGLE_MAGNITUDE: 0.03, // Default wiggle magnitude
+    BOOK_DEPTH: 3, // Default wiggle magnitude
     SHOW_TEXTURE: true, // Default state for showing texture
     SHOW_BONES: false,
     SHOW_COVER: true,
@@ -19,6 +20,7 @@ document.body.appendChild( renderer.domElement );
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+//const camera = new THREE.OrthographicCamera( window.innerWidth / - 8, window.innerWidth / 8, window.innerHeight / 8, window.innerHeight / - 8, -100, 1000 );
 const controls = new OrbitControls( camera, renderer.domElement );
 controls.update();
 
@@ -41,12 +43,16 @@ function onWindowResize(){
 
 // GUI INIT CODE
 // Functions that the GUI will call
+function updateNumberOfPages(value) {
+    gui_settings.NUM_PAGES = value;
+    init()
+}
 function updateNumberOfBones(value) {
     gui_settings.NUM_BONES = value;
     init()
 }
-function updateWiggleMagnitude(value) {
-    gui_settings.WIGGLE_MAGNITUDE = value;
+function updateBookDepth(value) {
+    gui_settings.BOOK_DEPTH = value;
     init()
 }
 function toggleTexture(value) {
@@ -66,11 +72,10 @@ function toggleBookOpen(value) {
     
 }
 // Initialize the GUI
-initGUI(gui_settings, updateNumberOfBones, updateWiggleMagnitude, toggleTexture, toggleBones, toggleCover, toggleBookOpen);
+initGUI(gui_settings, updateNumberOfPages, updateNumberOfBones, updateBookDepth, toggleTexture, toggleBones, toggleCover, toggleBookOpen);
 
 function cleanupScene()
 {
-    papers = []
     while(scene.children.length > 0){
         let object = scene.children[0];
     
@@ -97,41 +102,77 @@ function cleanupScene()
 
 let cover;
 let papers = [];
+const PAPER_WIDTH = 11.69;
+const PAPER_HEIGHT = 16.54;
+const COVER_THICKNESS = 0.3;
 function init()
 {
-    cleanupScene()
-
-    const paperOptions = {
-        // A3 size (assuming units here are inches)
-        paperWidth : 11.69,
-        paperHeight : 16.54,
-        NUM_BONES : gui_settings.NUM_BONES,
-        WIGGLE_MAGNITUDE : gui_settings.WIGGLE_MAGNITUDE,
-        SHOW_TEXTURE : gui_settings.SHOW_TEXTURE,
-        SHOW_BONES : gui_settings.SHOW_BONES,
-        textureFile: "images/paper.jpg",
-    }
+    //gui_settings.BOOK_OPEN = false;
 
     const coverOptions = {
         // A3 size (assuming units here are inches)
-        coverWidth : 12.69,
-        coverHeight: 17.54,
-        BOOK_DEPTH: 5,
-        COVER_THICKNESS: 0.3,
+        coverWidth : PAPER_WIDTH + COVER_THICKNESS * 2,
+        coverHeight: PAPER_HEIGHT + COVER_THICKNESS * 2,
+        BOOK_DEPTH: gui_settings.BOOK_DEPTH,
+        COVER_THICKNESS: COVER_THICKNESS,
         SHOW_TEXTURE: gui_settings.SHOW_TEXTURE,
         BOOK_OPEN: gui_settings.BOOK_OPEN,
         textureFile : "images/cover.jpg"
     }
 
-    const paper = new Paper(THREE, scene, paperOptions)
+    const paperOptions = {
+        // A3 size (assuming units here are inches)
+        paperWidth : PAPER_WIDTH,
+        paperHeight: PAPER_HEIGHT,
+        NUM_BONES : gui_settings.NUM_BONES,
+        WIGGLE_MAGNITUDE : gui_settings.WIGGLE_MAGNITUDE,
+        BOOK_DEPTH : coverOptions.BOOK_DEPTH,
+        COVER_THICKNESS: coverOptions.COVER_THICKNESS,
+        SHOW_TEXTURE : gui_settings.SHOW_TEXTURE,
+        SHOW_BONES : gui_settings.SHOW_BONES,
+        textureFile: "images/paper.jpg",
+    }
 
     if (gui_settings.SHOW_COVER) {
         cover = new Cover(THREE, scene, coverOptions)
     }
 
-    papers.push(paper)
+    papers = []
+    for (let i = 0; i < gui_settings.NUM_PAGES; i++) {
+        const paper = new Paper(THREE, scene, paperOptions, (i+1) / (gui_settings.NUM_PAGES + 1))
+        papers.push(paper)
+    }
 
-    camera.position.set( 0, paper.options.paperHeight / 2, paper.options.paperHeight );
+    cleanupScene()
+
+    if (gui_settings.SHOW_COVER)
+    {
+        scene.add(cover.meshFront);
+        scene.add(cover.meshBack);
+        scene.add(cover.meshSpine);
+    }
+    
+    papers.forEach(paper => {
+        scene.add(paper.mesh)
+        if (gui_settings.SHOW_BONES) {
+            paper.boneSpheres.forEach(sphere => scene.add(sphere))
+        }
+    });
+
+    /*
+    const paper1 = new Paper(THREE, scene, paperOptions, 0.25)
+    const paper2 = new Paper(THREE, scene, paperOptions, 0.5)
+    const paper3 = new Paper(THREE, scene, paperOptions, 0.75)
+
+    papers.push(paper1)
+    papers.push(paper2)
+    papers.push(paper3)
+    */
+
+    if (camera.position.x == 0 && camera.position.y == 0 && camera.position.z == 0)
+    {
+        camera.position.set( 0, paperOptions.paperHeight / 2, paperOptions.paperHeight );
+    }
 }
 
 function animate() {
@@ -141,7 +182,7 @@ function animate() {
 
     cover.update(gui_settings.BOOK_OPEN);
     
-    papers.forEach(paper => paper.update())
+    papers.forEach(paper => paper.update(cover.openAmount))
 
 
 

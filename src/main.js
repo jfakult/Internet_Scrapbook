@@ -13,6 +13,7 @@ const gui_settings = {
     SHOW_BONES: false,
     SHOW_COVER: true,
     BOOK_OPEN: false,
+    ORTHOGRAPHIC_CAMERA: false,
 };
 
 const renderer = new THREE.WebGLRenderer();
@@ -20,9 +21,9 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+let camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 //const camera = new THREE.OrthographicCamera( window.innerWidth / - 8, window.innerWidth / 8, window.innerHeight / 8, window.innerHeight / - 8, -100, 1000 );
-const controls = new OrbitControls( camera, renderer.domElement );
+let controls = new OrbitControls( camera, renderer.domElement );
 controls.update();
 
 // The X axis is red
@@ -70,11 +71,17 @@ function toggleCover(value) {
     init()
 }
 function toggleBookOpen(value) {
-    gui_settings.BOOK_OPEN = value;
-    
+    gui_settings.BOOK_OPEN = value;    
 }
+let cameraChanged = false;
+function toggleORTHOGRAPHICCamera(value) {
+    gui_settings.ORTHOGRAPHIC_CAMERA = value;
+    cameraChanged = true;
+    init()
+}
+
 // Initialize the GUI
-initGUI(gui_settings, updateNumberOfPages, updateNumberOfBones, updateBookDepth, toggleTexture, toggleBones, toggleCover, toggleBookOpen);
+initGUI(gui_settings, updateNumberOfPages, updateNumberOfBones, updateBookDepth, toggleTexture, toggleBones, toggleCover, toggleBookOpen, toggleORTHOGRAPHICCamera);
 
 function cleanupScene()
 {
@@ -110,6 +117,16 @@ const COVER_THICKNESS = 0.3;
 function init()
 {
     cleanupScene()
+
+    if (gui_settings.ORTHOGRAPHIC_CAMERA && cameraChanged) {
+        cameraChanged = false;
+        camera = new THREE.OrthographicCamera( window.innerWidth / -16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / -16, -100, 1000 );
+    }
+    else if (cameraChanged) {
+        camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    }
+    controls = new OrbitControls( camera, renderer.domElement );
+    controls.update();
 
     //gui_settings.BOOK_OPEN = false;
 

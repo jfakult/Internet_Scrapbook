@@ -1,7 +1,7 @@
 // gui.js
 import * as dat from 'dat.gui';
 
-function initGUI(settings, updateNumberOfPages, updateNumberOfBones, updateBookDepth, toggleTexture, toggleBones, toggleCover, toggleBookOpen) {
+function initGUI(settings, updateNumberOfPages, updateNumberOfBones, updateBookDepth, toggleTexture, toggleBones, toggleCover, toggleBookOpen, toggleORTHOGRAPHICCamera) {
   const gui = new dat.GUI();
 
   gui.add(settings, 'NUM_PAGES', 0, 48, 3).onChange(updateNumberOfPages).name('Number of Pages');
@@ -18,6 +18,9 @@ function initGUI(settings, updateNumberOfPages, updateNumberOfBones, updateBookD
 
   gui.add(settings, 'BOOK_OPEN').onChange(toggleBookOpen).name('Book Open');
 
+  gui.add(settings, 'ORTHOGRAPHIC_CAMERA').onChange(toggleORTHOGRAPHICCamera).name('Orthogographic Camera');
+
+  
   // Instructions
   addInstructions();
 }

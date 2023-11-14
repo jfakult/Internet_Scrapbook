@@ -1,4 +1,5 @@
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import PAPER_DATA from './paper_data.js';
 import { initGUI } from './Gui.js';
 import * as THREE from 'three';
 import Paper from './Paper.js';
@@ -27,9 +28,10 @@ controls.update();
 // The X axis is red
 // The Y axis is green
 // The Z axis is blue.
-const axesHelperSize = 5; // This can be any number that fits your scene
+/*const axesHelperSize = 5; // This can be any number that fits your scene
 const axesHelper = new THREE.AxesHelper(axesHelperSize);
 scene.add(axesHelper);
+*/
 
 window.addEventListener( 'resize', onWindowResize, false );
 
@@ -107,6 +109,8 @@ const PAPER_HEIGHT = 16.54;
 const COVER_THICKNESS = 0.3;
 function init()
 {
+    cleanupScene()
+
     //gui_settings.BOOK_OPEN = false;
 
     const coverOptions = {
@@ -117,6 +121,7 @@ function init()
         COVER_THICKNESS: COVER_THICKNESS,
         SHOW_TEXTURE: gui_settings.SHOW_TEXTURE,
         BOOK_OPEN: gui_settings.BOOK_OPEN,
+        SHOW_COVER: gui_settings.SHOW_COVER,
         textureFile : "images/cover.jpg"
     }
 
@@ -139,35 +144,17 @@ function init()
 
     papers = []
     for (let i = 0; i < gui_settings.NUM_PAGES; i++) {
-        const paper = new Paper(THREE, scene, paperOptions, (i+1) / (gui_settings.NUM_PAGES + 1))
+        let pageData = undefined;
+        if (i in PAPER_DATA.pages) {
+            pageData = PAPER_DATA.pages[i];
+        }
+
+        // 0 is the frontmost page (i.e page 1)
+        const pagePosition = 1 - (i + 1) / (gui_settings.NUM_PAGES + 1)
+
+        const paper = new Paper(THREE, scene, pagePosition, pageData, paperOptions)
         papers.push(paper)
     }
-
-    cleanupScene()
-
-    if (gui_settings.SHOW_COVER)
-    {
-        scene.add(cover.meshFront);
-        scene.add(cover.meshBack);
-        scene.add(cover.meshSpine);
-    }
-    
-    papers.forEach(paper => {
-        scene.add(paper.mesh)
-        if (gui_settings.SHOW_BONES) {
-            paper.boneSpheres.forEach(sphere => scene.add(sphere))
-        }
-    });
-
-    /*
-    const paper1 = new Paper(THREE, scene, paperOptions, 0.25)
-    const paper2 = new Paper(THREE, scene, paperOptions, 0.5)
-    const paper3 = new Paper(THREE, scene, paperOptions, 0.75)
-
-    papers.push(paper1)
-    papers.push(paper2)
-    papers.push(paper3)
-    */
 
     if (camera.position.x == 0 && camera.position.y == 0 && camera.position.z == 0)
     {
@@ -183,8 +170,6 @@ function animate() {
     cover.update(gui_settings.BOOK_OPEN);
     
     papers.forEach(paper => paper.update(cover.openAmount))
-
-
 
 	renderer.render( scene, camera );
 }

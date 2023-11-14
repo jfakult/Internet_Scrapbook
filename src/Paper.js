@@ -1,7 +1,8 @@
 import Helpers from './Helpers.js';
+import PaperElement from './PaperElement.js';
 
 class Paper {
-    constructor(THREE, scene, options, pagePosition) {
+    constructor(THREE, scene, pagePosition, paperElementData, options) {
         this.THREE = THREE;
         this.scene = scene;
 
@@ -10,7 +11,8 @@ class Paper {
         this.options = options;
         this.pagePosition = pagePosition; // value between 0-1 representing the pages position in the book
         this.geometry = new THREE.PlaneGeometry(this.options.paperWidth, this.options.paperHeight, this.options.NUM_BONES, 1);
-        this.geometry.translate(0, 0, (this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * (this.pagePosition - 0.5));
+        this.zTranslate = (this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * (this.pagePosition - 0.5)
+        this.geometry.translate(0, 0, this.zTranslate);
         this.rootPosition = undefined; // Initialize in buildSkeleton
         this.lastCoverOpenAmount = undefined;
 
@@ -24,10 +26,30 @@ class Paper {
         this.boneSpheres = [];
 
         this.skeleton = this.buildSkeleton(this.options.NUM_BONES, this.options.paperWidth, this.options.SHOW_BONES);
-        this.skinIndicesAndWeights = this.buildSkinIndicesAndWeights(this.geometry, this.options.paperWidth, this.options.NUM_BONES);
+        this.skinIndicesAndWeights = this.buildPaperSkinIndicesAndWeights(this.geometry, this.options.paperWidth, this.options.NUM_BONES);
         this.mesh = this.buildMesh(this.geometry, this.skeleton, this.skinIndicesAndWeights["indices"], this.skinIndicesAndWeights["weights"]);
 
-        //this.scene.add(this.mesh);
+        this.scene.add(this.mesh)
+        if (options.SHOW_BONES) {
+            this.boneSpheres.forEach(sphere => this.scene.add(sphere))
+        }
+
+        // Add the images and text to the paper
+        this.paperElementData = paperElementData;
+        this.paperElements = []
+        this.initPaperElements(this.paperElementData)
+    }
+
+    initPaperElements(paperElementData) {
+        if (!paperElementData)
+        {
+            return;
+        }
+
+        paperElementData.forEach(element => {
+            const paperElement = new PaperElement(this.THREE, this.scene, element, this.options.paperWidth, this.options.paperHeight, this.skeleton, this.zTranslate);
+            this.paperElements.push(paperElement);
+        })
     }
 
     buildSkeleton(num_bones, paperWidth, show_bones) {
@@ -56,7 +78,6 @@ class Paper {
                 let sphere = new this.THREE.Mesh(sphereGeometry, sphereMaterial);
                 sphere.name = "boneSphere" + i;
                 this.boneSpheres.push(sphere);
-                //this.scene.add(sphere);
             }
         }
 
@@ -65,7 +86,7 @@ class Paper {
         return skeleton
     }
 
-    buildSkinIndicesAndWeights(geometry, paperWidth, num_bones) {
+    buildPaperSkinIndicesAndWeights(geometry, paperWidth, num_bones) {
         const skinIndices = [];
         const skinWeights = [];
 
@@ -199,6 +220,10 @@ class Paper {
                 this.boneSpheres[i].position.setFromMatrixPosition(this.skeleton.bones[i].matrixWorld);
             }
         }
+
+        this.paperElements.forEach(element => {
+            element.update(coverOpenAmount, false);
+        })
     }
 }
 

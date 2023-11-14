@@ -62,6 +62,12 @@ class Cover {
 
         this.openAmount = this.options.BOOK_OPEN ? 1 : 0;
         this.openSpeed = 0.01;
+
+        if (options.SHOW_COVER) {
+            this.scene.add(this.meshFront);
+            this.scene.add(this.meshBack);
+            this.scene.add(this.meshSpine);
+        }
     }
 
     openSpine(amount) {

@@ -9,37 +9,50 @@ To use height in terms of the paper width:
     height: val / PAPER_SIZE_RATIO
 To use width in terms of the paper height:
     width: val * PAPER_SIZE_RATIO
+
+Top and Left refer to the relative page position of the top left corner of the image
+
+The top level key corresponds to the PAPER number, not the page (i.e paper 1 has pages 1 and 2)
 */
 
 const PAPER_DATA = {
-    "pages": {
+    "sheets": {
         "1": [{
-            "page_number": 1,
+            "page_side": "front",
             "type": "image",
             "src": "images/screenshot.png",
             "width": 0.5,
             "top": 0.25 / PAPER_SIZE_RATIO,
             "left": 0.25,
         },
+        {
+            "page_side": "back",
+            "type": "image",
+            "src": "images/screenshot.png",
+            "width": 0.6,
+            "height": 0.2,
+            "top": 0.5 / PAPER_SIZE_RATIO,
+            "left": 0.1,
+        },
         ],
-        /*"2": [{
-            "page_number": 2,
+        "2": [{
+            "page_side": "back",
             "type": "image",
             "src": "images/screenshot.png",
             "width": 0.3,
             "top": 0.5 / PAPER_SIZE_RATIO,
-            "left": 0.55,
+            "left": 0.5,
         },
         ],
         "3": [{
-            "page_number": 3,
+            "page_side": "front",
             "type": "image",
             "src": "images/screenshot.png",
             "width": 0.2,
             "top": 0.45 / PAPER_SIZE_RATIO,
             "left": 0.65,
         },
-        ],*/
+        ],
     }
 }
 

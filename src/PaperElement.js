@@ -9,10 +9,16 @@ class PaperElement {
         this.paperHeight = paperHeight;
         this.skeleton = skeleton;
         this.zTranslate = zTranslate;
+        this.pageSide = data.page_side;
 
-        this.NUM_SEGMENTS = 5;
+        // Full size image has 12 bones, smaller images will have less
+        // 12 for now because that is the default paper bones, and it seems good enough
+        this.NUM_SEGMENTS = Math.ceil(12 * this.data.width)
 
-        if (this.pageNumber % 2 == 1) {
+        if (this.pageSide == "front")
+        {
+            // 0.1 for now. Might compute based on num pages and book depth later.
+            // Probably fine to be even more, as long as page elements underneath the current page are not visible
             this.zTranslate += 0.1;
         }
         else
@@ -34,6 +40,7 @@ class PaperElement {
         let height = data.height;
         if (!width && !height) {
             console.log("No width or height defined. Refusing to show the pape element", data)
+            return;
         }
 
         let fontSize = data.fontSize;
@@ -44,6 +51,7 @@ class PaperElement {
 
         if (!textValue && !imageSrc) {
             console.log("No text value or image source defined. Refusing to show the paper element", data)
+            return;
         }
 
         let left = data.left || 0;
@@ -72,13 +80,18 @@ class PaperElement {
                 {
                     // I don't want to handle bone indexing off the page. Keeping all vertices in between bones makes things simple
                     console.log("Image dimensions are invalid are go off the page. Refusing to show the paper element", data);
+                    return
                 }
 
                 // Move left and top to account for the width of the image
                 // Left and top represent the location of the top left corner rather than the center of the image
-                left -= width / 2;
-                top -= height / 2;
-                console.log(width, height, left, top)
+                left = (left - 0.5) + width / 2;
+                top = (top - 0.5) + height / 2;
+
+                if (this.pageSide == "back")
+                {
+                    left *= -1;
+                }
 
                 this.initGeometry(tex, width, height, left, top);
             });

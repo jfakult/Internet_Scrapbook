@@ -24,15 +24,9 @@ const scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 //const camera = new THREE.OrthographicCamera( window.innerWidth / - 8, window.innerWidth / 8, window.innerHeight / 8, window.innerHeight / - 8, -100, 1000 );
 let controls = new OrbitControls( camera, renderer.domElement );
+controls.dampingFactor = 0.1; // friction
+controls.rotateSpeed = 0.1; // mouse sensitivity
 controls.update();
-
-// The X axis is red
-// The Y axis is green
-// The Z axis is blue.
-/*const axesHelperSize = 5; // This can be any number that fits your scene
-const axesHelper = new THREE.AxesHelper(axesHelperSize);
-scene.add(axesHelper);
-*/
 
 window.addEventListener( 'resize', onWindowResize, false );
 
@@ -126,6 +120,8 @@ function init()
         camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
     }
     controls = new OrbitControls( camera, renderer.domElement );
+    controls.dampingFactor = 0.1; // friction
+    controls.rotateSpeed = 0.1; // mouse sensitivity
     controls.update();
 
     //gui_settings.BOOK_OPEN = false;
@@ -162,11 +158,12 @@ function init()
     papers = []
     for (let i = 0; i < gui_settings.NUM_PAGES; i++) {
         let pageData = undefined;
-        if (i in PAPER_DATA.pages) {
-            pageData = PAPER_DATA.pages[i];
+        if ((gui_settings.NUM_PAGES - i) in PAPER_DATA.sheets) {
+            pageData = PAPER_DATA.sheets[gui_settings.NUM_PAGES - i];
         }
 
         // 0 is the frontmost page (i.e page 1)
+        // Push pages on from back to front
         const pagePosition = 1 - (i + 1) / (gui_settings.NUM_PAGES + 1)
 
         const paper = new Paper(THREE, scene, pagePosition, pageData, paperOptions)

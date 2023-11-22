@@ -11,7 +11,7 @@ class Paper {
         this.options = options;
         this.pagePosition = pagePosition; // value between 0-1 representing the pages position in the book
         this.geometry = new THREE.PlaneGeometry(this.options.paperWidth, this.options.paperHeight, this.options.NUM_BONES, 1);
-        this.zTranslate = (this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * (this.pagePosition - 0.5)
+        this.zTranslate = (this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * -(this.pagePosition - 0.5)
         this.geometry.translate(0, 0, this.zTranslate);
         this.rootPosition = undefined; // Initialize in buildSkeleton
         this.lastCoverOpenAmount = undefined;
@@ -61,7 +61,7 @@ class Paper {
 
             if (i == 0)
             {
-                bone.position.z = (this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * (this.pagePosition - 0.5);
+                bone.position.z = this.zTranslate; //(this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * (this.pagePosition - 0.5);
                 this.rootPosition = bone.position.clone();
             }
             // Can be optimized?
@@ -206,7 +206,7 @@ class Paper {
             // Cap the max at 90 degrees for now
             const minRotation = Math.PI / 32 * (this.options.BOOK_DEPTH / 5);
             const maxRotation = Math.min(Math.PI / 2 * (this.options.BOOK_DEPTH / 5), Math.PI / 2);
-            const rootBoneRotation = minRotation + this.pagePosition * (maxRotation - minRotation); // min degrees for back pages, max degrees for front pages
+            const rootBoneRotation = minRotation + (1 - this.pagePosition) * (maxRotation - minRotation); // min degrees for back pages, max degrees for front pages
 
             this.translateToSpine(this.skeleton.bones[0], rootBoneRotation, coverOpenAmount);
             this.rotateAroundOtherPages(this.skeleton, rootBoneRotation, coverOpenAmount);

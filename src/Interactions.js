@@ -20,7 +20,7 @@ class Interactions {
         }*/
         window.onkeydown = (event) => {
             if (event.key == "ArrowLeft") {
-                if (this.cover.openAmount > 0) {
+                if (this.cover.openAmount > 0 && this.openPosition == 0) {
                     this.bookOpen = false
                     return
                 }

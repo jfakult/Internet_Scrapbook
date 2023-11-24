@@ -11,8 +11,10 @@ To use width in terms of the paper height:
     width: val * PAPER_SIZE_RATIO
 
 Top and Left refer to the relative page position of the top left corner of the image
+For text, TOP refers to the top and left refers to the center. Only height should be specified for text
 
 The top level key corresponds to the PAPER number, not the page (i.e paper 1 has pages 1 and 2)
+
 */
 
 const PAPER_DATA = {
@@ -21,9 +23,18 @@ const PAPER_DATA = {
             "page_side": "front",
             "type": "image",
             "src": "images/screenshot.png",
-            "width": 0.5,
-            "top": 0.25 / PAPER_SIZE_RATIO,
-            "left": 0.25,
+            "height": 0.5,
+            "top": 0.25,
+            "left": 0.2 * PAPER_SIZE_RATIO,
+        },
+        {
+            "page_side": "front",
+            "type": "text",
+            "content": "Test Font",
+            "font": "comic sans ms",
+            "height": 0.05,
+            "top": 0.75,
+            "left": 0.5,
         },
         {
             "page_side": "back",

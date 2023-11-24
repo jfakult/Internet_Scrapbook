@@ -11,10 +11,6 @@ class PaperElement {
         this.zTranslate = zTranslate;
         this.pageSide = data.page_side;
 
-        // Full size image has 12 bones, smaller images will have less
-        // 12 for now because that is the default paper bones, and it seems good enough
-        this.NUM_SEGMENTS = Math.ceil(12 * this.data.width)
-
         if (this.pageSide == "front")
         {
             // 0.1 for now. Might compute based on num pages and book depth later.
@@ -43,13 +39,13 @@ class PaperElement {
             return;
         }
 
-        let fontSize = data.fontSize;
-        let textValue = data.value;
+        let font = data.font;
+        let textContent = data.content;
         let imageSrc = data.src;
         let imageRatio = 1
         let paperRatio = this.paperWidth / this.paperHeight;
 
-        if (!textValue && !imageSrc) {
+        if (!textContent && !imageSrc) {
             console.log("No text value or image source defined. Refusing to show the paper element", data)
             return;
         }
@@ -60,24 +56,20 @@ class PaperElement {
         //const paperWidth1 = this.paperWidth;
         //const paperHeight1 = this.paperHeight;
 
-        if (data.type == "image")
-        {
+        if (data.type == "image") {
             const loader = new this.THREE.TextureLoader();
             this.texture = loader.load(imageSrc, (tex) => {
                 // Update texture settings after it has loaded
                 imageRatio = tex.image.width / tex.image.height;
 
-                if (!height)
-                {
+                if (!height) {
                     height = (width / imageRatio) * paperRatio;
                 }
-                else if (!width)
-                {
+                else if (!width) {
                     width = (height * imageRatio) / paperRatio;
                 }
 
-                if ((width + left > 1 || height + top > 1) || (width < 0 || height < 0) || (left < 0 || top < 0) || (left > 1 || top > 1))
-                {
+                if ((width + left > 1 || height + top > 1) || (width < 0 || height < 0) || (left < 0 || top < 0) || (left > 1 || top > 1)) {
                     // I don't want to handle bone indexing off the page. Keeping all vertices in between bones makes things simple
                     console.log("Image dimensions are invalid are go off the page. Refusing to show the paper element", data);
                     return
@@ -88,17 +80,83 @@ class PaperElement {
                 left = (left - 0.5) + width / 2;
                 top = (top - 0.5) + height / 2;
 
-                if (this.pageSide == "back")
-                {
+                if (this.pageSide == "back") {
                     left *= -1;
                 }
 
                 this.initGeometry(tex, width, height, left, top);
             });
         }
+        else if (data.type == "text") {
+            if (!height)
+            {
+                console.log("No height defined for text. Refusing to show the paper element", data)
+                return
+            }
+
+            const textCanvas = document.createElement('canvas');
+            // Higher quality means the text is rendered onta a larger canvas
+            // 64 seems to be good enough
+            const CANVAS_QUALITY = 128;
+            textCanvas.height = CANVAS_QUALITY * textContent.split("\n").length;
+            textCanvas.width = CANVAS_QUALITY * 256;
+            const textCtx = textCanvas.getContext('2d');
+
+            document.fonts.ready.then(() => {
+
+                textCanvas.width = 0;
+                textContent.split("\n").forEach(line => {
+                    textCtx.font = `${CANVAS_QUALITY}px ${font}`;
+                    const lineWidth = Math.ceil(textCtx.measureText(line).width);
+                    if (lineWidth > textCanvas.width) {
+                        textCanvas.width = lineWidth;
+                    }
+                })
+
+                textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+
+                textCtx.fillStyle = '#00f';
+                textCtx.font = `${CANVAS_QUALITY}px ${font}`;
+                textCtx.textAlign = "center";
+                textCtx.textBaseline = "middle";
+                textCtx.fillText(textContent, textCanvas.width / 2, textCanvas.height / 2);
+
+                document.body.appendChild(textCanvas)
+
+                // Convert total width to percentage of page width
+                const textboxRatio = textCanvas.width / textCanvas.height;
+                width = (height * textboxRatio) / paperRatio;
+                height *= textContent.split("\n").length;
+                left = (left - 0.5);
+                top = -((top - 0.5) + height / 2);
+
+                if (width / 2 + left > 0.5 || left - width / 2 < -0.5 || top + height / 2 > 0.5 || top - height / 2 < -0.5) {
+                    // I don't want to handle bone indexing off the page. Keeping all vertices in between bones makes things simple
+                    console.log("Text dimensions are invalid are go off the page. Refusing to show the paper element", data);
+                    return
+                }
+
+                if (this.pageSide == "back") {
+                    left *= -1;
+                }
+
+                this.texture = new this.THREE.CanvasTexture(textCtx.getImageData(0, 0, textCanvas.width, textCanvas.height));
+                this.texture.needsUpdate = true;
+
+                this.initGeometry(this.texture, width, height, left, top);
+            });
+        }
+        else {
+            console.log("Invalid type. Refusing to show the paper element", data)
+            return
+        }
     }
 
     initGeometry(texture, width, height, left, top) {
+        // Full size image has 12 bones, smaller images will have less
+        // 12 for now because that is the default paper bones, and it seems good enough
+        this.NUM_SEGMENTS = Math.ceil(12 * width);
+        
         this.geometry = new this.THREE.PlaneGeometry(width * this.paperWidth, height * this.paperHeight, this.NUM_SEGMENTS, 1);
         this.geometry.translate(left * this.paperWidth, top * this.paperHeight, this.zTranslate);
 
@@ -121,7 +179,13 @@ class PaperElement {
 
             // Because the image vertices may be misaligned with the bones, we need to ensure weights are properly assigned
             // If the vertex lies exactly on the bone, things are simple
-            if (boneIndex == Math.floor(boneIndex)) {
+            if (boneIndex < 0 || boneIndex >= this.skeleton.bones.length) {
+                console.log("Warning: this element goes outside of the page, mapping to edge bones", this.data);
+                index = Math.min(Math.max(boneIndex, 0), this.skeleton.bones.length - 1);
+                indices = new this.THREE.Vector4(index, 0, 0, 0);
+                weights = new this.THREE.Vector4(1, 0, 0, 0);
+            }
+            else if (boneIndex == Math.floor(boneIndex)) {
                 indices = new this.THREE.Vector4(boneIndex, 0, 0, 0);
                 weights = new this.THREE.Vector4(1, 0, 0, 0);
             }
@@ -145,15 +209,15 @@ class PaperElement {
     }
 
     initMesh(texture) {
-        /*let material;
-        if (this.options.SHOW_TEXTURE) {
-            material = new this.THREE.MeshBasicMaterial({ map: this.texture, side: this.THREE.DoubleSide });
+        let material;
+        if (true || this.options.SHOW_TEXTURE) {
+            material = new this.THREE.MeshBasicMaterial({ map: texture, side: this.THREE.DoubleSide, transparent: this.data.type == "text" ? true : false });
         }
         else {
-            material = new this.THREE.MeshBasicMaterial({ color: 0xffaaaa, side: this.THREE.DoubleSide, wireframe: true });
-        }*/
+            material = new this.THREE.MeshBasicMaterial({ color: 0xaaffaa, side: this.THREE.DoubleSide, wireframe: true });
+        }
 
-        const material = new this.THREE.MeshBasicMaterial({ map: texture, side: this.THREE.DoubleSide });
+        //const material = new this.THREE.MeshBasicMaterial({ map: texture, side: this.THREE.DoubleSide });
         this.mesh = new this.THREE.SkinnedMesh(this.geometry, material);
 
         this.mesh.bind(this.skeleton);

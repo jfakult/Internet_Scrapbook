@@ -121,8 +121,6 @@ class PaperElement {
                 textCtx.textBaseline = "middle";
                 textCtx.fillText(textContent, textCanvas.width / 2, textCanvas.height / 2);
 
-                document.body.appendChild(textCanvas)
-
                 // Convert total width to percentage of page width
                 const textboxRatio = textCanvas.width / textCanvas.height;
                 width = (height * textboxRatio) / paperRatio;

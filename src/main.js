@@ -4,6 +4,7 @@ import { initGUI } from './Gui.js';
 import * as THREE from 'three';
 import Paper from './Paper.js';
 import Cover from './Cover.js';
+import Interactions from './Interactions.js';
 
 const gui_settings = {
     NUM_PAGES: 4, // Default number of pages
@@ -104,7 +105,8 @@ function cleanupScene()
 }
 
 let cover;
-let papers = [];
+let sheets = [];
+let interactionManager;
 const PAPER_WIDTH = 11.69;
 const PAPER_HEIGHT = 16.54;
 const COVER_THICKNESS = 0.3;
@@ -151,11 +153,15 @@ function init()
         textureFile: "images/paper.jpg",
     }
 
+    const interactionOptions = {
+        PAGE_TURN_SPEED: 0.01,
+    }
+
     if (gui_settings.SHOW_COVER) {
         cover = new Cover(THREE, scene, coverOptions)
     }
 
-    papers = []
+    sheets = []
     for (let i = 0; i < gui_settings.NUM_PAGES; i++) {
         let pageData = undefined;
         if ((gui_settings.NUM_PAGES - i) in PAPER_DATA.sheets) {
@@ -167,13 +173,15 @@ function init()
         const pagePosition = 1 - (i + 1) / (gui_settings.NUM_PAGES + 1)
 
         const paper = new Paper(THREE, scene, pagePosition, pageData, paperOptions)
-        papers.push(paper)
+        sheets.push(paper)
     }
 
     if (camera.position.x == 0 && camera.position.y == 0 && camera.position.z == 0)
     {
         camera.position.set( 0, paperOptions.paperHeight / 2, paperOptions.paperHeight );
     }
+
+    interactionManager = new Interactions(THREE, camera, cover, sheets, interactionOptions);
 }
 
 function animate() {
@@ -181,9 +189,7 @@ function animate() {
 
     controls.update();
 
-    cover.update(gui_settings.BOOK_OPEN);
-    
-    papers.forEach(paper => paper.update(cover.openAmount))
+    interactionManager.update();
 
 	renderer.render( scene, camera );
 }

@@ -14,7 +14,10 @@ class Paper {
         this.zTranslate = (this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * -(this.pagePosition - 0.5)
         this.geometry.translate(0, 0, this.zTranslate);
         this.rootPosition = undefined; // Initialize in buildSkeleton
+        this.openAmount = 0;
         this.lastCoverOpenAmount = undefined;
+        // After the book is opened, remember the current rotation of the page
+        this.coverOpenRotation = 0;
 
         const loader = new THREE.TextureLoader();
         this.texture = loader.load(options.textureFile, function (tex) {
@@ -181,7 +184,6 @@ class Paper {
 
         // Now we will slightly bend them back until the remaining part of the paper is flat
         // Math is used here so that the pages bend back more quickly at first, then slow down as they approach flat, but their sum always leaves the paper perfectly flat
-        let totalRotation = 0;
         const decayRate = 0.8;
         const n = skeleton.bones.length / 2; // Number of bones to apply rotation (excluding the first one)
         // Calculate the sum of the geometric series
@@ -197,20 +199,40 @@ class Paper {
         }
     }
 
-    update(coverOpenAmount) {
+    addOpenAmount(amount) {
+        this.openAmount += amount;
+        if (this.openAmount > 1) {
+            this.openAmount = 1;
+        }
+        else if (this.openAmount < 0) {
+            this.openAmount = 0;
+        }
+        this.update(this.lastCoverOpenAmount, true)
+    }
+
+    update(coverOpenAmount, forceUpdate = false) {
         let time = Date.now() * 0.001;
 
-        if (coverOpenAmount != this.lastCoverOpenAmount) {
+        if (forceUpdate || coverOpenAmount != this.lastCoverOpenAmount) {
             // Set the bounds for the rotation
             // Thin book will have papers less bent around each other
             // Cap the max at 90 degrees for now
-            const minRotation = Math.PI / 32 * (this.options.BOOK_DEPTH / 5);
+            const minRotation = Math.PI / 64 * (this.options.BOOK_DEPTH / 5);
             const maxRotation = Math.min(Math.PI / 2 * (this.options.BOOK_DEPTH / 5), Math.PI / 2);
             const rootBoneRotation = minRotation + (1 - this.pagePosition) * (maxRotation - minRotation); // min degrees for back pages, max degrees for front pages
+            // Inverse rotation is used for when the page flips open
+            const inverseRootBoneRotation = minRotation + (this.pagePosition) * (maxRotation - minRotation);
 
-            this.translateToSpine(this.skeleton.bones[0], rootBoneRotation, coverOpenAmount);
-            this.rotateAroundOtherPages(this.skeleton, rootBoneRotation, coverOpenAmount);
+            const finalRootRotation = rootBoneRotation * (1 - this.openAmount) - inverseRootBoneRotation * this.openAmount;
+
+            this.translateToSpine(this.skeleton.bones[0], finalRootRotation, coverOpenAmount);
+            this.rotateAroundOtherPages(this.skeleton, finalRootRotation, coverOpenAmount);
+
+            this.coverOpenRotation = this.skeleton.bones[0].rotation.y;
         }
+
+        // Paper opening
+        this.skeleton.bones[0].rotation.y = this.coverOpenRotation - Math.PI * this.openAmount;
 
         this.lastCoverOpenAmount = coverOpenAmount;
 

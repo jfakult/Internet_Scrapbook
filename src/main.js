@@ -1,6 +1,6 @@
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import PAPER_DATA from './paper_data.js';
-import { initGUI } from './Gui.js';
+//import { initGUI } from './Gui.js';
 import * as THREE from 'three';
 import Paper from './Paper.js';
 import Cover from './Cover.js';
@@ -9,7 +9,7 @@ import Interactions from './Interactions.js';
 const gui_settings = {
     NUM_PAGES: 4, // Default number of pages
     NUM_BONES: 12, // Default number of bones
-    BOOK_DEPTH: 3, // Default wiggle magnitude
+    BOOK_DEPTH: 2, // Default wiggle magnitude
     SHOW_TEXTURE: true, // Default state for showing texture
     SHOW_BONES: false,
     SHOW_COVER: true,
@@ -17,17 +17,20 @@ const gui_settings = {
     ORTHOGRAPHIC_CAMERA: false,
 };
 
+const CAMERA_FOV = 45;
+
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
 const scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+let camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
 //const camera = new THREE.OrthographicCamera( window.innerWidth / - 8, window.innerWidth / 8, window.innerHeight / 8, window.innerHeight / - 8, -100, 1000 );
-let controls = new OrbitControls( camera, renderer.domElement );
+/*let controls = new OrbitControls( camera, renderer.domElement );
 controls.dampingFactor = 0.1; // friction
 controls.rotateSpeed = 0.1; // mouse sensitivity
 controls.update();
+*/
 
 window.addEventListener( 'resize', onWindowResize, false );
 
@@ -76,7 +79,7 @@ function toggleORTHOGRAPHICCamera(value) {
 }
 
 // Initialize the GUI
-initGUI(gui_settings, updateNumberOfPages, updateNumberOfBones, updateBookDepth, toggleTexture, toggleBones, toggleCover, toggleBookOpen, toggleORTHOGRAPHICCamera);
+//initGUI(gui_settings, updateNumberOfPages, updateNumberOfBones, updateBookDepth, toggleTexture, toggleBones, toggleCover, toggleBookOpen, toggleORTHOGRAPHICCamera);
 
 function cleanupScene()
 {
@@ -119,12 +122,13 @@ function init()
         camera = new THREE.OrthographicCamera( window.innerWidth / -16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / -16, -100, 1000 );
     }
     else if (cameraChanged) {
-        camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
     }
-    controls = new OrbitControls( camera, renderer.domElement );
+    /*controls = new OrbitControls( camera, renderer.domElement );
     controls.dampingFactor = 0.1; // friction
     controls.rotateSpeed = 0.1; // mouse sensitivity
     controls.update();
+    */
 
     //gui_settings.BOOK_OPEN = false;
 
@@ -155,6 +159,7 @@ function init()
 
     const interactionOptions = {
         PAGE_TURN_SPEED: 0.01,
+        CAMERA_SPEED: 0.03,
     }
 
     if (gui_settings.SHOW_COVER) {
@@ -178,7 +183,11 @@ function init()
 
     if (camera.position.x == 0 && camera.position.y == 0 && camera.position.z == 0)
     {
-        camera.position.set( 0, paperOptions.paperHeight / 2, paperOptions.paperHeight );
+        // Zoom out a little more if the device is in portrait mode
+        const zoomFactor = window.innerWidth > window.innerHeight ? 0.8 : 1.1;
+        // Given FOV and paper height, calculate camera distance with a small margin
+        const camDistance = paperOptions.paperHeight / Math.tan(CAMERA_FOV / 2) * zoomFactor;
+        camera.position.set( 0, 0, camDistance);
     }
 
     interactionManager = new Interactions(THREE, camera, cover, sheets, interactionOptions);
@@ -187,7 +196,7 @@ function init()
 function animate() {
 	requestAnimationFrame( animate );
 
-    controls.update();
+    //controls.update();
 
     interactionManager.update();
 

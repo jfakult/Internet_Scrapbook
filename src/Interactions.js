@@ -11,8 +11,12 @@ class Interactions {
         this.bookOpen = false
 
         // Used for animating whereas openPosition is used for the actual position
-        this.openPosition = 0
-        this.openLastPosition = 0
+        // -1 means cover is closed, 0 cover is open, 1 first page is open, etc.
+        this.openPosition = -1
+        this.openLastPosition = -1
+
+        // Variable to keep track of whether the camera is focused on the left or right page
+        this.leftPageFocus = false
 
 
         /*window.onwheel = (event) => {
@@ -20,50 +24,114 @@ class Interactions {
         }*/
         window.onkeydown = (event) => {
             if (event.key == "ArrowLeft") {
-                if (this.cover.openAmount > 0 && this.openPosition == 0) {
+                if (this.cover.openAmount > 0 && this.openPosition <= 0) {
                     this.bookOpen = false
-                    return
+                    this.openPosition = -1
                 }
-                this.openLastPosition = this.openPosition
-                this.openPosition = Math.max(this.openPosition - 1, 0)
+                if (this.leftPageFocus) {
+                    this.openLastPosition = this.openPosition
+                    this.openPosition = Math.max(this.openPosition - 1, -1)
+                    this.leftPageFocus = false
+                }
+                else
+                {
+                    this.leftPageFocus = true
+                }
             }
             else if (event.key == "ArrowRight") {
                 if (this.cover.openAmount < 1) {
                     this.bookOpen = true
-                    return
                 }
-                this.openLastPosition = this.openPosition
-                this.openPosition = Math.min(this.openPosition + 1, this.sheets.length)
+                if (!this.bookOpen || !this.leftPageFocus) {
+                    this.openLastPosition = this.openPosition
+                    this.openPosition = Math.min(this.openPosition + 1, this.sheets.length)
+                    this.leftPageFocus = true
+                }
+                else
+                {
+                    this.leftPageFocus = false
+                }
+            }
+            if (this.openPosition <= 0)
+            {
+                this.leftPageFocus = false
+            }
+            else if (this.openPosition >= this.sheets.length)
+            {
+                this.leftPageFocus = true
             }
         }
+
+        this.isSwiping = false
+        this.swipeStartX = 0
+        document.addEventListener('touchstart', (event) => {
+            this.isSwiping = true
+            this.swipeStartX = event.touches[0].clientX
+        })
+        document.addEventListener('touchmove', (event) => {
+            if (this.isSwiping) {
+                this.isSwiping = false;
+                const swipeEndX = event.touches[0].clientX
+                const swipeDirection = swipeEndX < this.swipeStartX ? "ArrowRight" : "ArrowLeft"
+
+                window.onkeydown({key: swipeDirection})
+            }
+        })
+        document.addEventListener('touchend', (event) => {
+            this.isSwiping = false
+        })
+        document.addEventListener('mousedown', (event) => {
+            this.isSwiping = true
+            this.swipeStartX = event.clientX
+        })
+        document.addEventListener('mousemove', (event) => {
+            if (this.isSwiping) {
+                this.isSwiping = false;
+                const swipeEndX = event.clientX
+                const swipeDirection = swipeEndX < this.swipeStartX ? "ArrowRight" : "ArrowLeft"
+
+                window.onkeydown({key: swipeDirection})
+            }
+        })
+        document.addEventListener('mouseup', (event) => {
+            this.isSwiping = false
+        })
+        document.addEventListener('wheel', (event) => {
+            const isUp = event.deltaY < 0
+            window.onkeydown({key: isUp ? "ArrowLeft" : "ArrowRight"})
+        })
     }
 
     update()
     {
         this.cover.update(this.bookOpen);
 
-        this.sheets.forEach(paper => paper.update(this.cover.openAmount))
+        console.log(this.leftPageFocus)
+        const cameraPositionFactor = -this.leftPageFocus
+        const cameraTargetX = cameraPositionFactor * this.cover.openAmount * this.sheets[0].options.paperWidth
+        // Animate camera towards the target
+        this.camera.position.x += (cameraTargetX - this.camera.position.x) * this.options.CAMERA_SPEED
 
-        for (let i = 0; i < this.openPosition; i++)
+        //this.sheets.forEach(paper => paper.update(this.cover.openAmount))
+
+        // Remember here that sheets[0] is the back sheet (i.e lowest pagePosition value)
+        for (let i = this.sheets.length - 1; i >= 0; i--)
         {
-            const paper = this.sheets[this.sheets.length - i - 1]
+            const paper = this.sheets[i]
 
-            // Pages should be opening
-            if (this.openPosition > this.openLastPosition)
+            const pageNum = this.sheets.length - i - 1
+
+            if (this.openPosition > pageNum && paper.openAmount < 1)
             {
                 // Paper is not fully opened yet
-                if (paper.openAmount < 1)
-                {
-                    paper.addOpenAmount(this.options.PAGE_TURN_SPEED)
-                }
+                paper.addOpenAmount(this.options.PAGE_TURN_SPEED)
             }
-            else if (this.openPosition < this.openLastPosition)
+            else if (this.openPosition <= pageNum && paper.openAmount > 0)
             {
-                // Paper is not fully closed yet
-                if (paper.openAmount > 0)
-                {
-                    paper.addOpenAmount(-this.options.PAGE_TURN_SPEED)
-                }
+                paper.addOpenAmount(-this.options.PAGE_TURN_SPEED)
+            }
+            else {
+                paper.update(this.cover.openAmount)
             }
         }
     }

@@ -19,32 +19,34 @@ The top level key corresponds to the PAPER number, not the page (i.e paper 1 has
 
 const PAPER_DATA = {
     "sheets": {
-        "1": [{
-            "page_side": "front",
-            "type": "image",
-            "src": "images/screenshot.png",
-            "height": 0.5,
-            "top": 0.25,
-            "left": 0.2 * PAPER_SIZE_RATIO,
-        },
-        {
-            "page_side": "front",
-            "type": "text",
-            "content": "Test Font",
-            "font": "comic sans ms",
-            "height": 0.05,
-            "top": 0.75,
-            "left": 0.5,
-        },
-        {
-            "page_side": "back",
-            "type": "image",
-            "src": "images/screenshot.png",
-            "width": 0.6,
-            "height": 0.2,
-            "top": 0.5 / PAPER_SIZE_RATIO,
-            "left": 0.1,
-        },
+        "1": [
+            {
+                "page_side": "front",
+                "type": "image",
+                "src": "images/screenshot.png",
+                "height": 0.5,
+                "top": 0.25,
+                "left": 0.2 * PAPER_SIZE_RATIO,
+                "give_camera_focus": true,
+            },
+            {
+                "page_side": "front",
+                "type": "text",
+                "content": "Test Font",
+                "font": "comic sans ms",
+                "height": 0.05,
+                "top": 0.75,
+                "left": 0.5,
+            },
+            {
+                "page_side": "back",
+                "type": "image",
+                "src": "images/screenshot.png",
+                "width": 0.6,
+                "height": 0.2,
+                "top": 0.5 / PAPER_SIZE_RATIO,
+                "left": 0.1,
+            },
         ],
         "2": [{
             "page_side": "back",

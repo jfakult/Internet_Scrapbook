@@ -22,21 +22,30 @@ const PAPER_DATA = {
         "1": [
             {
                 "page_side": "front",
-                "type": "image",
-                "src": "images/screenshot.png",
-                "height": 0.5,
-                "top": 0.25,
-                "left": 0.2 * PAPER_SIZE_RATIO,
-                "give_camera_focus": true,
+                "type": "text",
+                "content": "Silicon\nSentiments",
+                "font": "comic sans ms",
+                "height": 0.075,
+                "top": 0.05,
+                "left": 0.5,
             },
             {
                 "page_side": "front",
                 "type": "text",
-                "content": "Test Font",
+                "content": "Memories of\nArt and Mac",
                 "font": "comic sans ms",
                 "height": 0.05,
-                "top": 0.75,
+                "top": 0.2,
                 "left": 0.5,
+            },
+            {
+                "page_side": "front",
+                "type": "image",
+                "src": "images/page_images/1960_crib_bell_phone.jpeg",
+                "width": 0.8,
+                "top": 0.05,
+                "left": 0.1,
+                "give_camera_focus": true, /* Feature not implemented */
             },
             {
                 "page_side": "back",

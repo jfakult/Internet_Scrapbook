@@ -97,9 +97,9 @@ class PaperElement {
             const textCanvas = document.createElement('canvas');
             // Higher quality means the text is rendered onta a larger canvas
             // 64 seems to be good enough
-            const CANVAS_QUALITY = 128;
+            const CANVAS_QUALITY = 256;
             textCanvas.height = CANVAS_QUALITY * textContent.split("\n").length;
-            textCanvas.width = CANVAS_QUALITY * 256;
+            textCanvas.width = CANVAS_QUALITY * 64;
             const textCtx = textCanvas.getContext('2d');
 
             document.fonts.ready.then(() => {
@@ -115,11 +115,15 @@ class PaperElement {
 
                 textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
 
-                textCtx.fillStyle = '#00f';
+                textCtx.fillStyle = '#000';
                 textCtx.font = `${CANVAS_QUALITY}px ${font}`;
                 textCtx.textAlign = "center";
                 textCtx.textBaseline = "middle";
-                textCtx.fillText(textContent, textCanvas.width / 2, textCanvas.height / 2);
+                let lineIndex = 1;
+                textContent.split("\n").forEach(line => {
+                    textCtx.fillText(line, textCanvas.width / 2, textCanvas.height * (lineIndex / (textContent.split("\n").length + 1)));
+                    lineIndex += 1
+                });
 
                 // Convert total width to percentage of page width
                 const textboxRatio = textCanvas.width / textCanvas.height;

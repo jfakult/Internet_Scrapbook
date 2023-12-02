@@ -159,7 +159,7 @@ function init()
 
     const interactionOptions = {
         PAGE_TURN_SPEED: 0.01,
-        CAMERA_SPEED: 0.03,
+        CAMERA_SPEED: 0.02,
     }
 
     if (gui_settings.SHOW_COVER) {

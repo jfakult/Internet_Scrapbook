@@ -106,7 +106,6 @@ class Interactions {
     {
         this.cover.update(this.bookOpen);
 
-        console.log(this.leftPageFocus)
         const cameraPositionFactor = -this.leftPageFocus
         const cameraTargetX = cameraPositionFactor * this.cover.openAmount * this.sheets[0].options.paperWidth
         // Animate camera towards the target

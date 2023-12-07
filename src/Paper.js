@@ -2,20 +2,23 @@ import Helpers from './Helpers.js';
 import PaperElement from './PaperElement.js';
 
 class Paper {
-    constructor(THREE, scene, pagePosition, paperElementData, options) {
+    constructor(THREE, scene, pageNumber, pagePosition, paperElementData, options) {
         this.THREE = THREE;
         this.scene = scene;
 
         this.helpers = new Helpers();
 
         this.options = options;
+        this.pageNumber = pageNumber;
         this.pagePosition = pagePosition; // value between 0-1 representing the pages position in the book
+        this.currentPagePosition = 0
         this.geometry = new THREE.PlaneGeometry(this.options.paperWidth, this.options.paperHeight, this.options.NUM_BONES, 1);
         this.zTranslate = (this.options.BOOK_DEPTH - this.options.COVER_THICKNESS) * -(this.pagePosition - 0.5)
         this.geometry.translate(0, 0, this.zTranslate);
         this.rootPosition = undefined; // Initialize in buildSkeleton
         this.openAmount = 0;
         this.lastCoverOpenAmount = undefined;
+        this.lastOpenAmount = undefined;
         // After the book is opened, remember the current rotation of the page
         this.coverOpenRotation = 0;
 
@@ -24,6 +27,9 @@ class Paper {
             // Update texture settings after it has loaded
             //tex.wrapS = tex.wrapT = this.THREE.RepeatWrapping; // Enable wrapping for both horizontal and vertical directions
             //tex.repeat.set(4, 4); // Repeat the texture 4 times in each direction
+            const scaleX = Math.random() * 0.1 + 0.9;
+            const scaleY = Math.random() * 0.1 + 0.9;
+            tex.repeat.set(scaleX, scaleY);
         });
 
         this.boneSpheres = [];
@@ -50,6 +56,7 @@ class Paper {
         }
 
         paperElementData.forEach(element => {
+            element.pageNumber = this.pageNumber;
             const paperElement = new PaperElement(this.THREE, this.scene, element, this.options.paperWidth, this.options.paperHeight, this.skeleton, this.zTranslate);
             this.paperElements.push(paperElement);
         })
@@ -210,9 +217,11 @@ class Paper {
         this.update(this.lastCoverOpenAmount, true)
     }
 
-    update(coverOpenAmount, forceUpdate = false) {
-        let time = Date.now() * 0.001;
+    setCurrentPagePosition(pagePosition) {
+        this.currentPagePosition = pagePosition;
+    }
 
+    update(coverOpenAmount, forceUpdate = false) {
         if (forceUpdate || coverOpenAmount != this.lastCoverOpenAmount) {
             // Set the bounds for the rotation
             // Thin book will have papers less bent around each other
@@ -231,21 +240,24 @@ class Paper {
             this.coverOpenRotation = this.skeleton.bones[0].rotation.y;
         }
 
-        // Paper opening
-        this.skeleton.bones[0].rotation.y = this.coverOpenRotation - Math.PI * this.openAmount;
+        if (forceUpdate || this.openAmount != this.lastOpenAmount) {
+            // Paper opening
+            this.skeleton.bones[0].rotation.y = this.coverOpenRotation - Math.PI * this.openAmount;
 
-        this.lastCoverOpenAmount = coverOpenAmount;
-
-        if (this.options.SHOW_BONES)
-        {
-            for (let i = 0; i < this.boneSpheres.length; i++) {
-                this.boneSpheres[i].position.setFromMatrixPosition(this.skeleton.bones[i].matrixWorld);
+            if (this.options.SHOW_BONES) {
+                for (let i = 0; i < this.boneSpheres.length; i++) {
+                    this.boneSpheres[i].position.setFromMatrixPosition(this.skeleton.bones[i].matrixWorld);
+                }
             }
+
+            //console.log(0)
+            this.paperElements.forEach(element => {
+                element.update(this.openAmount, this.pageNumber, this.currentPagePosition);
+            })
         }
 
-        this.paperElements.forEach(element => {
-            element.update(coverOpenAmount, false);
-        })
+        this.lastOpenAmount = this.openAmount
+        this.lastCoverOpenAmount = coverOpenAmount;
     }
 }
 

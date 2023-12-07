@@ -7,9 +7,9 @@ import Cover from './Cover.js';
 import Interactions from './Interactions.js';
 
 const gui_settings = {
-    NUM_PAGES: 4, // Default number of pages
-    NUM_BONES: 12, // Default number of bones
-    BOOK_DEPTH: 2, // Default wiggle magnitude
+    NUM_PAGES: 11, // Default number of pages
+    NUM_BONES: 18, // Default number of bones
+    BOOK_DEPTH: 2.5, // Default wiggle magnitude
     SHOW_TEXTURE: true, // Default state for showing texture
     SHOW_BONES: false,
     SHOW_COVER: true,
@@ -26,11 +26,13 @@ document.body.appendChild( renderer.domElement );
 const scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
 //const camera = new THREE.OrthographicCamera( window.innerWidth / - 8, window.innerWidth / 8, window.innerHeight / 8, window.innerHeight / - 8, -100, 1000 );
-/*let controls = new OrbitControls( camera, renderer.domElement );
+/*
+let controls = new OrbitControls( camera, renderer.domElement );
 controls.dampingFactor = 0.1; // friction
 controls.rotateSpeed = 0.1; // mouse sensitivity
 controls.update();
 */
+
 
 window.addEventListener( 'resize', onWindowResize, false );
 
@@ -39,7 +41,7 @@ function onWindowResize(){
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( window.innerWidth, window.innerHeight);
 }
 
 // GUI INIT CODE
@@ -124,11 +126,13 @@ function init()
     else if (cameraChanged) {
         camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
     }
-    /*controls = new OrbitControls( camera, renderer.domElement );
+    /*
+    controls = new OrbitControls( camera, renderer.domElement );
     controls.dampingFactor = 0.1; // friction
     controls.rotateSpeed = 0.1; // mouse sensitivity
     controls.update();
     */
+    
 
     //gui_settings.BOOK_OPEN = false;
 
@@ -177,7 +181,7 @@ function init()
         // Push pages on from back to front
         const pagePosition = 1 - (i + 1) / (gui_settings.NUM_PAGES + 1)
 
-        const paper = new Paper(THREE, scene, pagePosition, pageData, paperOptions)
+        const paper = new Paper(THREE, scene, gui_settings.NUM_PAGES - i, pagePosition, pageData, paperOptions)
         sheets.push(paper)
     }
 
@@ -191,6 +195,11 @@ function init()
     }
 
     interactionManager = new Interactions(THREE, camera, cover, sheets, interactionOptions);
+
+    // Meh, this is a hacky way to make sure the book is in the right position
+    setTimeout(() => {
+        interactionManager.updateAll();
+    }, 100)
 }
 
 function animate() {

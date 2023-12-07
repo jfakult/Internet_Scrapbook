@@ -34,11 +34,6 @@ class Cover {
         this.meshBack = new this.THREE.Mesh(this.geometryBack, materialBack);
         this.meshSpine = new this.THREE.Mesh(this.geometrySpine, materialFront);
 
-        /*
-        this.meshFront.position.z = this.options.BOOK_DEPTH / 2;
-        this.meshBack.position.z = -this.options.BOOK_DEPTH / 2;
-        this.meshSpine.position.x = -this.options.coverWidth / 2 + this.options.COVER_THICKNESS / 2;
-        */
         // Translate matrix on the z axis
         this.frontMatrix = new this.THREE.Matrix4();
         this.frontMatrix.makeTranslation(0, 0, this.options.BOOK_DEPTH / 2);

@@ -102,13 +102,20 @@ class Interactions {
         })
     }
 
+    // Init the cover, all papers, and their respectively elements
+    updateAll() {
+        this.cover.update(0)
+        // force update all papers
+        this.sheets.forEach(paper => paper.update(0, true))
+    }
+
     update()
     {
         this.cover.update(this.bookOpen);
 
         const cameraPositionFactor = -this.leftPageFocus
         const cameraTargetX = cameraPositionFactor * this.cover.openAmount * this.sheets[0].options.paperWidth
-        // Animate camera towards the target
+        
         this.camera.position.x += (cameraTargetX - this.camera.position.x) * this.options.CAMERA_SPEED
 
         //this.sheets.forEach(paper => paper.update(this.cover.openAmount))
@@ -117,6 +124,8 @@ class Interactions {
         for (let i = this.sheets.length - 1; i >= 0; i--)
         {
             const paper = this.sheets[i]
+
+            paper.setCurrentPagePosition(this.openPosition)
 
             const pageNum = this.sheets.length - i - 1
 

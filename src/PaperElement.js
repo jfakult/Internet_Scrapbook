@@ -10,16 +10,18 @@ class PaperElement {
         this.skeleton = skeleton;
         this.zTranslate = zTranslate;
         this.pageSide = data.page_side;
+        this.TEXT_LINE_SPACING = 1.1;
 
+        const zExtra = Math.random() * 0.01;
         if (this.pageSide == "front")
         {
             // 0.1 for now. Might compute based on num pages and book depth later.
             // Probably fine to be even more, as long as page elements underneath the current page are not visible
-            this.zTranslate += 0.1;
+            this.zTranslate += 0.05 - zExtra;
         }
         else
         {
-            this.zTranslate -= 0.1;
+            this.zTranslate -= 0.05 - zExtra;
         }
 
         this.texture = undefined;
@@ -84,7 +86,10 @@ class PaperElement {
                     left *= -1;
                 }
 
-                this.initGeometry(tex, width, height, left, top);
+                //console.log(imageSrc, top, left, width, height);
+
+                // Not sure why the top gets flipped. I probably did something weird somewhere
+                this.initGeometry(tex, width, height, left, -top);
             });
         }
         else if (data.type == "text") {
@@ -98,7 +103,7 @@ class PaperElement {
             // Higher quality means the text is rendered onta a larger canvas
             // 64 seems to be good enough
             const CANVAS_QUALITY = 256;
-            textCanvas.height = CANVAS_QUALITY * textContent.split("\n").length;
+            textCanvas.height = CANVAS_QUALITY * textContent.split("\n").length * this.TEXT_LINE_SPACING;
             textCanvas.width = CANVAS_QUALITY * 64;
             const textCtx = textCanvas.getContext('2d');
 
@@ -115,14 +120,23 @@ class PaperElement {
 
                 textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
 
-                textCtx.fillStyle = '#000';
+                textCtx.fillStyle = '#0a0000';
                 textCtx.font = `${CANVAS_QUALITY}px ${font}`;
                 textCtx.textAlign = "center";
                 textCtx.textBaseline = "middle";
+
+                if (this.pageSide == "back") {
+                    // Apply transformations only for the 'back' page side
+                    textCtx.save(); // Save the current context state
+                    textCtx.translate(textCanvas.width, 0);
+                    textCtx.scale(-1, 1);
+                }
+                
+                // Rendering text is the same for both sides
                 let lineIndex = 1;
                 textContent.split("\n").forEach(line => {
                     textCtx.fillText(line, textCanvas.width / 2, textCanvas.height * (lineIndex / (textContent.split("\n").length + 1)));
-                    lineIndex += 1
+                    lineIndex += 1;
                 });
 
                 // Convert total width to percentage of page width
@@ -140,6 +154,7 @@ class PaperElement {
 
                 if (this.pageSide == "back") {
                     left *= -1;
+                    textCtx.restore(); // Restore the context to its original state for the reversed text
                 }
 
                 this.texture = new this.THREE.CanvasTexture(textCtx.getImageData(0, 0, textCanvas.width, textCanvas.height));
@@ -155,9 +170,9 @@ class PaperElement {
     }
 
     initGeometry(texture, width, height, left, top) {
-        // Full size image has 12 bones, smaller images will have less
-        // 12 for now because that is the default paper bones, and it seems good enough
-        this.NUM_SEGMENTS = Math.ceil(12 * width);
+        // Full size image has 18 bones, smaller images will have less
+        // 18 for now because that is the default paper bones, and it seems good enough
+        this.NUM_SEGMENTS = Math.ceil(18 * width);
         
         this.geometry = new this.THREE.PlaneGeometry(width * this.paperWidth, height * this.paperHeight, this.NUM_SEGMENTS, 1);
         this.geometry.translate(left * this.paperWidth, top * this.paperHeight, this.zTranslate);
@@ -227,8 +242,40 @@ class PaperElement {
         this.scene.add(this.mesh);
     }
 
-    update(coverOpenAmount, isFocused) {
+    // Basically just hides the mesh if it it doesn't need to be rendered
+    update(pageOpenAmount, sheetNumber, currentSheetNumber) {
+        if (this.mesh && this.mesh.visible != undefined) {
+            const isFacingCamera = this.pageSide == "front" ? pageOpenAmount < 0.5 : pageOpenAmount > 0.5;
+            if (isFacingCamera) {
+                this.mesh.visible = true;
+            }
+            else {
+                this.mesh.visible = false;
+            }
+        }
+        /*
+        currentSheetNumber = currentSheetNumber < 0 ? 0 : currentSheetNumber;
 
+        if (this.mesh && this.mesh.visible != undefined) {
+            const isPageTurning = this.pageSide == "front" ? pageOpenAmount > 0.2 : pageOpenAmount < 0.8;
+            const isOnCurrentPage = this.pageSide == "front" ? Math.abs(sheetNumber - currentSheetNumber) <= 1 : sheetNumber == currentSheetNumber
+            const isOnNeighborPage = this.pageSide == "front" ? Math.abs(sheetNumber - currentSheetNumber) <= 2 : Math.abs(sheetNumber - currentSheetNumber) <= 2;
+
+
+            if (isOnCurrentPage) { // !isFacingCamera || 
+                this.mesh.visible = true
+            }
+            else
+            {
+                if (isPageTurning && isOnNeighborPage) {
+                    this.mesh.visible = true
+                }
+                else {
+                    this.mesh.visible = false
+                }
+            }
+        }
+        */
     }
 }
 

@@ -1,7 +1,7 @@
 //import { Helpers } from './Helpers.js';
 
 class PaperElement {
-    constructor(THREE, scene, data, paperWidth, paperHeight, skeleton, zTranslate) {
+    constructor(THREE, scene, data, paperWidth, paperHeight, skeleton, zTranslate, pageIndex) {
         this.THREE = THREE;
         this.scene = scene;
         this.data = data;
@@ -10,23 +10,25 @@ class PaperElement {
         this.skeleton = skeleton;
         this.zTranslate = zTranslate;
         this.pageSide = data.page_side;
-        this.TEXT_LINE_SPACING = 1.1;
+        this.pageIndex = pageIndex;
+        this.TEXT_LINE_SPACING = 1.2;
 
-        const zExtra = Math.random() * 0.01;
+        // So that later images appear on top of earlier ones
+        const zExtra = 0.03 * pageIndex;
         if (this.pageSide == "front")
         {
             // 0.1 for now. Might compute based on num pages and book depth later.
             // Probably fine to be even more, as long as page elements underneath the current page are not visible
-            this.zTranslate += 0.05 - zExtra;
+            this.zTranslate += 0.1 - zExtra;
         }
         else
         {
-            this.zTranslate -= 0.05 - zExtra;
+            this.zTranslate -= 0.1 - zExtra;
         }
 
         this.texture = undefined;
         this.geometry = undefined;
-        this.mesh = 1;
+        this.mesh = undefined;
 
         // Needs call backs in order to have the asynchronous texture load
         // More specifically, we need to grab the image ratio before we can initialize the geometry
@@ -170,8 +172,8 @@ class PaperElement {
     }
 
     initGeometry(texture, width, height, left, top) {
-        // Full size image has 18 bones, smaller images will have less
-        // 18 for now because that is the default paper bones, and it seems good enough
+        // Full size image has 24 bones, smaller images will have less
+        // 24 for now because that is the default paper bones, and it seems good enough
         this.NUM_SEGMENTS = Math.ceil(18 * width);
         
         this.geometry = new this.THREE.PlaneGeometry(width * this.paperWidth, height * this.paperHeight, this.NUM_SEGMENTS, 1);
@@ -228,11 +230,14 @@ class PaperElement {
     initMesh(texture) {
         let material;
         if (true || this.options.SHOW_TEXTURE) {
-            material = new this.THREE.MeshBasicMaterial({ map: texture, side: this.THREE.DoubleSide, transparent: this.data.type == "text" ? true : false });
+            material = new this.THREE.MeshStandardMaterial({ map: texture, side: this.THREE.DoubleSide, transparent: this.data.type == "text" ? true : false });
         }
         else {
             material = new this.THREE.MeshBasicMaterial({ color: 0xaaffaa, side: this.THREE.DoubleSide, wireframe: true });
         }
+
+        material.castShadow = true;
+        material.receiveShadow = true;
 
         //const material = new this.THREE.MeshBasicMaterial({ map: texture, side: this.THREE.DoubleSide });
         this.mesh = new this.THREE.SkinnedMesh(this.geometry, material);
@@ -245,7 +250,7 @@ class PaperElement {
     // Basically just hides the mesh if it it doesn't need to be rendered
     update(pageOpenAmount, sheetNumber, currentSheetNumber) {
         if (this.mesh && this.mesh.visible != undefined) {
-            const isFacingCamera = this.pageSide == "front" ? pageOpenAmount < 0.5 : pageOpenAmount > 0.5;
+            const isFacingCamera = this.pageSide == "front" ? pageOpenAmount < 0.6 : pageOpenAmount > 0.4;
             if (isFacingCamera) {
                 this.mesh.visible = true;
             }

@@ -22,13 +22,18 @@ class Cover {
         let materialFront;
         let materialBack;
         if (this.options.SHOW_TEXTURE) {
-            materialFront = new this.THREE.MeshBasicMaterial({ map: this.textureFront, side: this.THREE.DoubleSide });
-            materialBack = new this.THREE.MeshBasicMaterial({ map: this.textureBack, side: this.THREE.DoubleSide });
+            materialFront = new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide });
+            materialBack = new this.THREE.MeshStandardMaterial({ map: this.textureBack, side: this.THREE.DoubleSide });
         }
         else {
             materialFront = new this.THREE.MeshBasicMaterial({ color: 0xaaaaaa, side: this.THREE.DoubleSide, wireframe: true });
             materialBack = new this.THREE.MeshBasicMaterial({ color: 0xaaaaaa, side: this.THREE.DoubleSide, wireframe: true });
         }
+
+        materialFront.receiveShadow = true;
+        materialFront.castShadow = true;
+        materialBack.receiveShadow = true;
+        materialBack.castShadow = true;
 
         this.meshFront = new this.THREE.Mesh(this.geometryFront, materialFront);
         this.meshBack = new this.THREE.Mesh(this.geometryBack, materialBack);

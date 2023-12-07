@@ -9,7 +9,7 @@ import Interactions from './Interactions.js';
 const gui_settings = {
     NUM_PAGES: 11, // Default number of pages
     NUM_BONES: 18, // Default number of bones
-    BOOK_DEPTH: 2.5, // Default wiggle magnitude
+    BOOK_DEPTH: 3, // Default wiggle magnitude
     SHOW_TEXTURE: true, // Default state for showing texture
     SHOW_BONES: false,
     SHOW_COVER: true,
@@ -20,11 +20,13 @@ const gui_settings = {
 const CAMERA_FOV = 45;
 
 const renderer = new THREE.WebGLRenderer();
+renderer.shadowMap.enabled = true;
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
 const scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
 //const camera = new THREE.OrthographicCamera( window.innerWidth / - 8, window.innerWidth / 8, window.innerHeight / 8, window.innerHeight / - 8, -100, 1000 );
 /*
 let controls = new OrbitControls( camera, renderer.domElement );
@@ -188,7 +190,7 @@ function init()
     if (camera.position.x == 0 && camera.position.y == 0 && camera.position.z == 0)
     {
         // Zoom out a little more if the device is in portrait mode
-        const zoomFactor = window.innerWidth > window.innerHeight ? 0.8 : 1.1;
+        const zoomFactor = window.innerWidth > window.innerHeight ? 0.7 : 1.1;
         // Given FOV and paper height, calculate camera distance with a small margin
         const camDistance = paperOptions.paperHeight / Math.tan(CAMERA_FOV / 2) * zoomFactor;
         camera.position.set( 0, 0, camDistance);
@@ -199,7 +201,20 @@ function init()
     // Meh, this is a hacky way to make sure the book is in the right position
     setTimeout(() => {
         interactionManager.updateAll();
-    }, 100)
+    }, 500)
+
+    const color = 0xffffff
+    const intensity = 1;
+    const light1 = new THREE.DirectionalLight(color, intensity);
+    light1.castShadow = true;
+    light1.position.set(gui_settings.BOOK_DEPTH, 0, gui_settings.BOOK_DEPTH * 2);
+    light1.target.position.set(0, 0, 0);
+    const light2 = new THREE.DirectionalLight(color, intensity);
+    light2.castShadow = true;
+    light2.position.set(-gui_settings.BOOK_DEPTH, 0, gui_settings.BOOK_DEPTH * 2);
+    light2.target.position.set(0, 0, 0);
+    scene.add(light1);
+    scene.add(light2);
 }
 
 function animate() {

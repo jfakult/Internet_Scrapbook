@@ -55,10 +55,12 @@ class Paper {
             return;
         }
 
+        let pageIndex = paperElementData.length
         paperElementData.forEach(element => {
             element.pageNumber = this.pageNumber;
-            const paperElement = new PaperElement(this.THREE, this.scene, element, this.options.paperWidth, this.options.paperHeight, this.skeleton, this.zTranslate);
+            const paperElement = new PaperElement(this.THREE, this.scene, element, this.options.paperWidth, this.options.paperHeight, this.skeleton, this.zTranslate, pageIndex / paperElementData.length);
             this.paperElements.push(paperElement);
+            pageIndex -= 1
         })
     }
 
@@ -84,7 +86,7 @@ class Paper {
             if (show_bones) {
                 // Add a sphere to visualize the bone
                 const sphereGeometry = new this.THREE.SphereGeometry(0.1, 32, 32);
-                const sphereMaterial = new this.THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                const sphereMaterial = new this.THREE.MeshStandardMaterial({ color: 0x00ff00 });
                 let sphere = new this.THREE.Mesh(sphereGeometry, sphereMaterial);
                 sphere.name = "boneSphere" + i;
                 this.boneSpheres.push(sphere);
@@ -143,11 +145,14 @@ class Paper {
     buildMesh(geometry, skeleton, indices, weights) {
         let material;
         if (this.options.SHOW_TEXTURE) {
-            material = new this.THREE.MeshBasicMaterial({ map: this.texture, side: this.THREE.DoubleSide });
+            material = new this.THREE.MeshStandardMaterial({ map: this.texture, side: this.THREE.DoubleSide });
         }
         else {
             material = new this.THREE.MeshBasicMaterial({ color: 0xffaaaa, side: this.THREE.DoubleSide, wireframe: true });
         }
+
+        material.castShadow = true;
+        material.receiveShadow = true;
 
         geometry.setAttribute('skinIndex', new this.THREE.Uint16BufferAttribute(indices, 4));
         geometry.setAttribute('skinWeight', new this.THREE.Float32BufferAttribute(weights, 4));

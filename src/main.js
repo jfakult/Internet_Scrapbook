@@ -1,10 +1,12 @@
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import PAPER_DATA from './paper_data.js';
-//import { initGUI } from './Gui.js';
 import * as THREE from 'three';
 import Paper from './Paper.js';
 import Cover from './Cover.js';
+import { easeInOutQuad, easeInOutCubic } from './Helpers.js';
+//import { initGUI } from './Gui.js';
+import PAPER_DATA from './paper_data.js';
 import Interactions from './Interactions.js';
+import StarScapeBackground from './StarScapeBackground.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const gui_settings = {
     NUM_PAGES: 11, // Default number of pages
@@ -19,13 +21,27 @@ const gui_settings = {
 
 const CAMERA_FOV = 45;
 
+let animationStarted = false;
+let loadInAnimation = true;
+let loadAnimationStartTime;
+const CAM_START_DISTANCE = 250;
+const LOAD_IN_ANIMATION_TIME = 24000; // 24000
+
 const renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
 renderer.setSize( window.innerWidth, window.innerHeight );
+setTimeout(() => {
+    // Add fade-in class
+    renderer.domElement.classList.add("fade-in");
+    setTimeout(() => {
+        animationStarted = true;
+        loadAnimationStartTime = Date.now() - 0;
+    }, 8000); // 8000
+}, 1000)
 document.body.appendChild( renderer.domElement );
 
 const scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
+let camera;
 
 //const camera = new THREE.OrthographicCamera( window.innerWidth / - 8, window.innerWidth / 8, window.innerHeight / 8, window.innerHeight / - 8, -100, 1000 );
 /*
@@ -114,27 +130,20 @@ function cleanupScene()
 let cover;
 let sheets = [];
 let interactionManager;
+let background;
 const PAPER_WIDTH = 11.69;
 const PAPER_HEIGHT = 16.54;
 const COVER_THICKNESS = 0.3;
+
+// Zoom out a little more if the device is in portrait mode
+const ZOOM_FACTOR = window.innerWidth > window.innerHeight ? 0.75 : 1.1;
+// Given FOV and paper height, calculate camera distance with a small margin
+let camDistance
 function init()
 {
     cleanupScene()
 
-    if (gui_settings.ORTHOGRAPHIC_CAMERA && cameraChanged) {
-        cameraChanged = false;
-        camera = new THREE.OrthographicCamera( window.innerWidth / -16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / -16, -100, 1000 );
-    }
-    else if (cameraChanged) {
-        camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
-    }
-    /*
-    controls = new OrbitControls( camera, renderer.domElement );
-    controls.dampingFactor = 0.1; // friction
-    controls.rotateSpeed = 0.1; // mouse sensitivity
-    controls.update();
-    */
-    
+    background = new StarScapeBackground(THREE, scene);
 
     //gui_settings.BOOK_OPEN = false;
 
@@ -168,6 +177,8 @@ function init()
         CAMERA_SPEED: 0.02,
     }
 
+    camDistance = paperOptions.paperHeight / Math.tan(CAMERA_FOV / 2) * ZOOM_FACTOR;
+
     if (gui_settings.SHOW_COVER) {
         cover = new Cover(THREE, scene, coverOptions)
     }
@@ -187,21 +198,27 @@ function init()
         sheets.push(paper)
     }
 
+    camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    if (gui_settings.ORTHOGRAPHIC_CAMERA && cameraChanged) {
+        cameraChanged = false;
+        camera = new THREE.OrthographicCamera( window.innerWidth / -16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / -16, -100, 1000 );
+    }
+    else if (cameraChanged) {
+        camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    }
+    /*
+    controls = new OrbitControls( camera, renderer.domElement );
+    controls.dampingFactor = 0.1; // friction
+    controls.rotateSpeed = 0.1; // mouse sensitivity
+    controls.update();
+    */
+
     if (camera.position.x == 0 && camera.position.y == 0 && camera.position.z == 0)
     {
-        // Zoom out a little more if the device is in portrait mode
-        const zoomFactor = window.innerWidth > window.innerHeight ? 0.7 : 1.1;
-        // Given FOV and paper height, calculate camera distance with a small margin
-        const camDistance = paperOptions.paperHeight / Math.tan(CAMERA_FOV / 2) * zoomFactor;
-        camera.position.set( 0, 0, camDistance);
+        camera.position.set( 0, 0, camDistance + CAM_START_DISTANCE);
     }
 
     interactionManager = new Interactions(THREE, camera, cover, sheets, interactionOptions);
-
-    // Meh, this is a hacky way to make sure the book is in the right position
-    setTimeout(() => {
-        interactionManager.updateAll();
-    }, 500)
 
     const color = 0xffffff
     const intensity = 1;
@@ -217,13 +234,46 @@ function init()
     scene.add(light2);
 }
 
+let animationLoadHandler = -1;
+let starSpeed = 0.1;
+let lastExtraDistance = CAM_START_DISTANCE;
 function animate() {
 	requestAnimationFrame( animate );
 
     //controls.update();
 
-    interactionManager.update();
+    if (loadInAnimation)
+    {
+        if (animationStarted)
+        {
+            // Move camera from camDistance + CAM_START_DISTANCE to camDistance
+            // Start moving fast and slow down as we get closer
+            const timeSinceStart = Date.now() - loadAnimationStartTime;
+            const fractionSinceStart = timeSinceStart / LOAD_IN_ANIMATION_TIME;
+            const extraDistance = (1 - easeInOutCubic(fractionSinceStart)) * CAM_START_DISTANCE;
+            camera.position.set( 0, 0, camDistance + extraDistance);
 
+            const camSpeed = Math.abs(extraDistance - lastExtraDistance) / CAM_START_DISTANCE;
+            lastExtraDistance = extraDistance;
+            starSpeed = Math.pow(1 + camSpeed * 30, 8) - 1 + 0.1;
+            console.log(starSpeed)
+
+            if (animationLoadHandler < 0)
+            {
+                animationLoadHandler = setTimeout(() => {
+                    loadInAnimation = false;
+                    starSpeed = 0.1;
+                    interactionManager.updateAll();
+                }, LOAD_IN_ANIMATION_TIME);
+            }
+        }
+    }
+    else
+    {
+        interactionManager.update();
+    }
+
+    background.animateStars(starSpeed);
 	renderer.render( scene, camera );
 }
 

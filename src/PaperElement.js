@@ -1,5 +1,3 @@
-//import { Helpers } from './Helpers.js';
-
 class PaperElement {
     constructor(THREE, scene, data, paperWidth, paperHeight, skeleton, zTranslate, pageIndex) {
         this.THREE = THREE;

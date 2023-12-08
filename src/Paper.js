@@ -1,12 +1,9 @@
-import Helpers from './Helpers.js';
 import PaperElement from './PaperElement.js';
 
 class Paper {
     constructor(THREE, scene, pageNumber, pagePosition, paperElementData, options) {
         this.THREE = THREE;
         this.scene = scene;
-
-        this.helpers = new Helpers();
 
         this.options = options;
         this.pageNumber = pageNumber;

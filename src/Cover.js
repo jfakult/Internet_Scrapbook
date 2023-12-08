@@ -1,4 +1,4 @@
-//import { Helpers } from './Helpers.js';
+import { easeInOutCubic } from './Helpers.js';
 
 class Cover {
     constructor(THREE, scene, options) {
@@ -61,7 +61,7 @@ class Cover {
         //this.scene.add(this.meshSpine);
 
         this.openAmount = this.options.BOOK_OPEN ? 1 : 0;
-        this.openSpeed = 0.01;
+        this.openSpeed = 0.005;
 
         if (options.SHOW_COVER) {
             this.scene.add(this.meshFront);
@@ -134,8 +134,8 @@ class Cover {
         this.openAmount += this.openSpeed * (opening ? 1 : -1);
         this.openAmount = Math.min(Math.max(this.openAmount, 0), 1);
 
-        this.openSpine(this.openAmount);
-        this.openFront(this.openAmount);
+        this.openSpine(easeInOutCubic(this.openAmount));
+        this.openFront(easeInOutCubic(this.openAmount));
     }
 }
 

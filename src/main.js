@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import Paper from './Paper.js';
 import Cover from './Cover.js';
-import { easeInOutQuad, easeInOutCubic } from './Helpers.js';
+import { easeInOutCubic } from './Helpers.js';
 //import { initGUI } from './Gui.js';
 import PAPER_DATA from './paper_data.js';
 import Interactions from './Interactions.js';
@@ -25,7 +25,7 @@ let animationStarted = false;
 let loadInAnimation = true;
 let loadAnimationStartTime;
 const CAM_START_DISTANCE = 250;
-const LOAD_IN_ANIMATION_TIME = 24000; // 24000
+const LOAD_IN_ANIMATION_TIME = 1000; // 24000
 
 const renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
@@ -36,7 +36,7 @@ setTimeout(() => {
     setTimeout(() => {
         animationStarted = true;
         loadAnimationStartTime = Date.now() - 0;
-    }, 6000); // 8000
+    }, 1000); // 8000
 }, 1000)
 document.body.appendChild( renderer.domElement );
 
@@ -173,7 +173,7 @@ function init()
     }
 
     const interactionOptions = {
-        PAGE_TURN_SPEED: 0.01,
+        PAGE_TURN_SPEED: 0.0075,
         CAMERA_SPEED: 0.02,
     }
 
@@ -198,13 +198,13 @@ function init()
         sheets.push(paper)
     }
 
-    camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 10000 );
     if (gui_settings.ORTHOGRAPHIC_CAMERA && cameraChanged) {
         cameraChanged = false;
         camera = new THREE.OrthographicCamera( window.innerWidth / -16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / -16, -100, 1000 );
     }
     else if (cameraChanged) {
-        camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        camera = new THREE.PerspectiveCamera( CAMERA_FOV, window.innerWidth / window.innerHeight, 0.1, 10000 );
     }
     /*
     controls = new OrbitControls( camera, renderer.domElement );
@@ -218,7 +218,7 @@ function init()
         camera.position.set( 0, 0, camDistance + CAM_START_DISTANCE);
     }
 
-    interactionManager = new Interactions(THREE, camera, cover, sheets, interactionOptions);
+    interactionManager = new Interactions(THREE, camera, camDistance, cover, sheets, interactionOptions);
 
     const color = 0xffffff
     const intensity = 1;
@@ -256,7 +256,6 @@ function animate() {
             const camSpeed = Math.abs(extraDistance - lastExtraDistance) / CAM_START_DISTANCE;
             lastExtraDistance = extraDistance;
             starSpeed = Math.pow(1 + camSpeed * 30, 8) - 1 + 0.1;
-            console.log(starSpeed)
 
             if (animationLoadHandler < 0)
             {

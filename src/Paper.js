@@ -1,3 +1,4 @@
+import { easeInOutCubic } from './Helpers.js'
 import PaperElement from './PaperElement.js';
 
 class Paper {
@@ -170,15 +171,15 @@ class Paper {
         const distanceToRotationPoint = Math.sqrt(distanceToSpineZ * distanceToSpineZ + distanceToSpineX * distanceToSpineX);
 
         // X follows the circular path swept out by the spine (plus some extra space for the cover)
-        let overX = -distanceToRotationPoint * Math.sin((Math.PI / 2) * amount);
+        let overX = -distanceToRotationPoint * Math.sin((Math.PI / 2) * easeInOutCubic(amount));
         
         // Z goes from pagePosition to (0 + this.options.COVER_THICKNESS)
-        let overZ = -distanceToRotationPoint * (1 - Math.cos((Math.PI / 2) * amount)) + (this.options.COVER_THICKNESS / 2) * amount;
+        let overZ = -distanceToRotationPoint * (1 - Math.cos((Math.PI / 2) * easeInOutCubic(amount))) + (this.options.COVER_THICKNESS / 2) * easeInOutCubic(amount);
 
         // Also need to add translation because each bone segment has a width
         const boneHalfWidth = (this.options.paperWidth / this.options.NUM_BONES) / 2 + 0.01;
-        overX -= boneHalfWidth * (1 - Math.cos(rootBoneRotation)) * amount
-        overZ += boneHalfWidth * Math.sin(rootBoneRotation) * amount
+        overX -= boneHalfWidth * (1 - Math.cos(rootBoneRotation)) * easeInOutCubic(amount)
+        overZ += boneHalfWidth * Math.sin(rootBoneRotation) * easeInOutCubic(amount)
 
         bone.position.x = this.rootPosition.x + overX;
         bone.position.z = this.rootPosition.z + overZ;
@@ -189,7 +190,7 @@ class Paper {
     // The the next few bones (depending on amount) rotate back to flat
     rotateAroundOtherPages(skeleton, rootBoneRotation, amount) {
         // Flat when closed, rotated when open
-        skeleton.bones[0].rotation.y = -rootBoneRotation * amount;
+        skeleton.bones[0].rotation.y = -rootBoneRotation * easeInOutCubic(amount);
 
         // Now we will slightly bend them back until the remaining part of the paper is flat
         // Math is used here so that the pages bend back more quickly at first, then slow down as they approach flat, but their sum always leaves the paper perfectly flat
@@ -204,7 +205,7 @@ class Paper {
         for (let i = 1; i <= n; i++)
         {
             const boneRotation = (Math.pow(decayRate, i - 1) / sumOfSeries) * rootBoneRotation;
-            skeleton.bones[i].rotation.y = boneRotation * amount;
+            skeleton.bones[i].rotation.y = boneRotation * easeInOutCubic(amount);
         }
     }
 
@@ -234,7 +235,7 @@ class Paper {
             // Inverse rotation is used for when the page flips open
             const inverseRootBoneRotation = minRotation + (this.pagePosition) * (maxRotation - minRotation);
 
-            const finalRootRotation = rootBoneRotation * (1 - this.openAmount) - inverseRootBoneRotation * this.openAmount;
+            const finalRootRotation = rootBoneRotation * (1 - easeInOutCubic(this.openAmount)) - inverseRootBoneRotation * easeInOutCubic(this.openAmount);
 
             this.translateToSpine(this.skeleton.bones[0], finalRootRotation, coverOpenAmount);
             this.rotateAroundOtherPages(this.skeleton, finalRootRotation, coverOpenAmount);
@@ -244,7 +245,7 @@ class Paper {
 
         if (forceUpdate || this.openAmount != this.lastOpenAmount) {
             // Paper opening
-            this.skeleton.bones[0].rotation.y = this.coverOpenRotation - Math.PI * this.openAmount;
+            this.skeleton.bones[0].rotation.y = this.coverOpenRotation - Math.PI * easeInOutCubic(this.openAmount);
 
             if (this.options.SHOW_BONES) {
                 for (let i = 0; i < this.boneSpheres.length; i++) {

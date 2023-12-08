@@ -36,7 +36,7 @@ setTimeout(() => {
     setTimeout(() => {
         animationStarted = true;
         loadAnimationStartTime = Date.now() - 0;
-    }, 8000); // 8000
+    }, 6000); // 8000
 }, 1000)
 document.body.appendChild( renderer.domElement );
 

@@ -8,6 +8,8 @@ class Interactions {
         this.camera = camera
         this.options = options
 
+        this.isDesktop = window.innerWidth > window.innerHeight
+
         this.CAMERA_Z_START = cameraDistanceStart
         this.DYNAMIC_CAMERA = true;
         this.ZOOM_OUT = false;
@@ -28,10 +30,13 @@ class Interactions {
         /*window.onwheel = (event) => {
             this.openPosition += event.deltaY
         }*/
+        document.getElementById("audio").volume = 0
         window.onkeydown = (event) => {
+            // Allow the camera to slide back and forth to look at different pages
             if (event.key == "1") {
                 this.DYNAMIC_CAMERA = !this.DYNAMIC_CAMERA
             }
+            // Fade out effect (i.e zoom out)
             else if (event.key == "2") {
                 this.ZOOM_OUT = !this.ZOOM_OUT
                 // To prevent z clipping (aka flashing)
@@ -39,6 +44,12 @@ class Interactions {
                     paper.mesh.visible = !this.ZOOM_OUT
                     paper.paperElements.forEach(element => element.mesh.visible = !this.ZOOM_OUT)
                 })
+            }
+            else if (event.key == "3") {
+                const audio = document.getElementById("audio")
+                audio.play()
+                
+                audio.volume = 1 - audio.volume
             }
             else if (event.key == "ArrowLeft") {
                 if (this.cover.openAmount > 0 && this.openPosition <= 0) {
@@ -130,10 +141,22 @@ class Interactions {
     {
         this.cover.update(this.bookOpen);
 
-        const cameraPositionFactor = -(this.leftPageFocus && this.DYNAMIC_CAMERA)
+        let cameraPositionFactor = -(this.leftPageFocus && this.DYNAMIC_CAMERA)
+        if (this.isDesktop)
+        {
+            cameraPositionFactor = -0.25 - -(this.leftPageFocus && this.DYNAMIC_CAMERA) * 0.5
+        }
         // Move the camera to the left or right page depending on the openPosition
         const cameraTargetX = cameraPositionFactor * this.sheets[0].options.paperWidth
-        this.camera.position.x += (cameraTargetX - this.camera.position.x) * this.options.CAMERA_SPEED
+
+        if (this.isDesktop && Math.abs(this.camera.position.x - cameraTargetX) > 0.1)
+        {
+            this.camera.position.x += this.options.CAMERA_SPEED
+        }
+        else
+        {   
+            this.camera.position.x += (cameraTargetX - this.camera.position.x) * this.options.CAMERA_SPEED
+        }
 
         if (this.ZOOM_OUT)
         {

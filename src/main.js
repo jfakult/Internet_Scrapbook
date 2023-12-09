@@ -25,7 +25,7 @@ let animationStarted = false;
 let loadInAnimation = true;
 let loadAnimationStartTime;
 const CAM_START_DISTANCE = 250;
-const LOAD_IN_ANIMATION_TIME = 1000; // 24000
+const LOAD_IN_ANIMATION_TIME = 19000; // 24000
 
 const renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
@@ -36,7 +36,7 @@ setTimeout(() => {
     setTimeout(() => {
         animationStarted = true;
         loadAnimationStartTime = Date.now() - 0;
-    }, 1000); // 8000
+    }, 8000); // 8000
 }, 1000)
 document.body.appendChild( renderer.domElement );
 
@@ -235,11 +235,9 @@ function init()
 }
 
 let animationLoadHandler = -1;
-let starSpeed = 0.1;
+let starSpeed = 0.05;
 let lastExtraDistance = CAM_START_DISTANCE;
 function animate() {
-	requestAnimationFrame( animate );
-
     //controls.update();
 
     if (loadInAnimation)
@@ -261,7 +259,7 @@ function animate() {
             {
                 animationLoadHandler = setTimeout(() => {
                     loadInAnimation = false;
-                    starSpeed = 0.1;
+                    starSpeed = 0.05;
                     interactionManager.updateAll();
                 }, LOAD_IN_ANIMATION_TIME);
             }
@@ -273,6 +271,9 @@ function animate() {
     }
 
     background.animateStars(starSpeed);
+
+    requestAnimationFrame( animate );
+
 	renderer.render( scene, camera );
 }
 

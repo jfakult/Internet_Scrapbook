@@ -11,7 +11,7 @@ class StarScapeBackground {
 
     addSphere() {
         // The loop will move from z position of -1000 to z position 1000, adding a random particle at each position. 
-        for ( var z= -1000; z < 1000; z+=5 ) {
+        for ( var z= -2000; z < 1000; z+=4 ) {
 
             const red = Math.random() * 0.8 + 0.2;
             const blue = Math.random() * 0.8 + 0.2;
@@ -23,15 +23,15 @@ class StarScapeBackground {
 
             // This time we give the sphere random x and y positions between -500 and 500
             // Don't let them be too close to 0 or they may clip through the book
-            let xPos = Math.random() * 1000 - 500;
-            while (Math.abs(xPos) < 10)
+            let xPos = Math.random() * 2500 - 1250;
+            while (Math.abs(xPos) < 20)
             {
-                xPos = Math.random() * 1000 - 500;
+                xPos = Math.random() * 2500 - 1250;
             }
-            let yPos = Math.random() * 1000 - 500;
-            while (Math.abs(yPos) < 10)
+            let yPos = Math.random() * 2500 - 1250;
+            while (Math.abs(yPos) < 20)
             {
-                yPos = Math.random() * 1000 - 500;
+                yPos = Math.random() * 3000 - 1500;
             }
 
             sphere.position.x = xPos;
@@ -59,11 +59,11 @@ class StarScapeBackground {
 			const star = this.stars[i]; 
 				
 			// and move it forward dependent on the mouseY position.
-			star.position.z += i * (starSpeed / 20);
+			star.position.z += i * (starSpeed / 128);
 				
 			// if the particle is too close move it to the back
-			if (star.position.z>1000) {
-                star.position.z-=2000;
+			if (star.position.z > 1000) {
+                star.position.z = -2000;
             }
 		}
 	}

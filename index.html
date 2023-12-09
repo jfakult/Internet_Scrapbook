@@ -11,14 +11,21 @@
 			}
 			canvas {
 				opacity: 0;
-				transition: opacity 4s ease-in-out;
+				transition: opacity 8s ease-in-out;
 			}
 			.fade-in {
 				opacity: 1;
 			}
+			audio {
+				display: none;
+			}
 		</style>
 	</head>
 	<body>
+		<audio id="audio" controls autoplay>
+			<source src="Transatlantic_Kaleidoscope.mp3" type="audio/mpeg">
+			Your browser does not support the audio element.
+		</audio>
 		<script type="module" src="src/main.js"></script>
 	</body>
 </html>

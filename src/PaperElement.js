@@ -11,6 +11,7 @@ class PaperElement {
         this.pageIndex = pageIndex;
         this.TEXT_LINE_SPACING = 1.2;
         this.SHADOW_SIZE_FACTOR = 1.05;
+        this.TRANSPARENCY = false
 
         this.drop_shadow_texture = new this.THREE.TextureLoader().load('images/drop_shadow_256.png');
 
@@ -30,8 +31,8 @@ class PaperElement {
         this.texture = undefined;
         this.geometry = undefined;
         this.shadowGeometry = undefined;
-        this.mesh = undefined;
-        this.shadowMesh = undefined;
+        this.mesh = {};
+        this.shadowMesh = {};
 
         // Needs call backs in order to have the asynchronous texture load
         // More specifically, we need to grab the image ratio before we can initialize the geometry
@@ -64,6 +65,8 @@ class PaperElement {
         //const paperHeight1 = this.paperHeight;
 
         if (data.type == "image") {
+            this.TRANSPARENCY = data.src.indexOf("decoration") != -1
+
             const loader = new this.THREE.TextureLoader();
             this.texture = loader.load(imageSrc, (tex) => {
                 // Update texture settings after it has loaded
@@ -84,6 +87,7 @@ class PaperElement {
                 if ((width + left > 1 || height + top > 1) || (width < 0 || height < 0) || (left < 0 || top < 0) || (left > 1 || top > 1)) {
                     // I don't want to handle bone indexing off the page. Keeping all vertices in between bones makes things simple
                     console.log("Image dimensions are invalid are go off the page. Refusing to show the paper element", data);
+                    console.log("Page num: ", this.pageIndex, "left: ", left, "width: ", width, "top: ", top, "height: ", height, "page side: ", this.pageSide)
                     return
                 }
 
@@ -107,12 +111,6 @@ class PaperElement {
             {
                 console.log("No height defined for text. Refusing to show the paper element", data)
                 return
-            }
-
-            if (data.content.indexOf("Baby Art") != -1) {
-                console.log("Found baby art");
-                this.zTranslate -= 0.5
-
             }
 
             document.fonts.ready.then(() => {
@@ -165,7 +163,6 @@ class PaperElement {
                 if (width / 2 + left > 0.5 || left - width / 2 < -0.5 || top + height / 2 > 0.5 || top - height / 2 < -0.5) {
                     // I don't want to handle bone indexing off the page. Keeping all vertices in between bones makes things simple
                     console.log("Text dimensions are invalid are go off the page. Refusing to show the paper element", data);
-                    this.mesh = {}
                     return
                 }
 
@@ -190,11 +187,15 @@ class PaperElement {
         // Full size image has 24 bones, smaller images will have less
         // 24 for now because that is the default paper bones, and it seems good enough
         this.NUM_SEGMENTS = Math.ceil(18 * width);
+
+        if (this.data.type == "image" && this.data.src.indexOf("decoration") != -1) {
+            this.NUM_SEGMENTS = 1;
+        }
         
         this.geometry = new this.THREE.PlaneGeometry(width * this.paperWidth, height * this.paperHeight, this.NUM_SEGMENTS, 1);
         this.geometry.translate(left * this.paperWidth, top * this.paperHeight, this.zTranslate);
 
-        if (this.data.type == "image" && this.data.src.indexOf("shadow") == -1) {
+        if (this.data.type == "image" && this.data.src.indexOf("shadow") == -1 && this.data.src.indexOf("decoration") == -1) {
             this.shadowGeometry = new this.THREE.PlaneGeometry(width * this.paperWidth * this.SHADOW_SIZE_FACTOR, height * this.paperHeight * this.SHADOW_SIZE_FACTOR, this.NUM_SEGMENTS, 1);
             let shadowTranslate = this.pageSide == "front" ? -0.03 : 0.03;
             this.shadowGeometry.translate(left * this.paperWidth, top * this.paperHeight, this.zTranslate + shadowTranslate);
@@ -221,6 +222,8 @@ class PaperElement {
             // If the vertex lies exactly on the bone, things are simple
             if (boneIndex < 0 || boneIndex >= this.skeleton.bones.length - 1) {
                 console.log("Warning: this element goes outside of the page, mapping to edge bones", this.data);
+                console.log("Page num: ", this.pageNumber, "left: ", this.data.left, "width: ", this.data.width, "top: ", this.data.top, "height: ", this.data.height, "page side: ", this.pageSide, "bone index: ", boneIndex)
+
                 let index = Math.min(Math.max(boneIndex, 0), this.skeleton.bones.length - 1);
 
                 indices = new this.THREE.Vector4(index, 0, 0, 0);
@@ -260,7 +263,7 @@ class PaperElement {
         let material;
         let shadowMaterial;
         if (true || this.options.SHOW_TEXTURE) {
-            material = new this.THREE.MeshStandardMaterial({ map: texture, side: this.THREE.DoubleSide, transparent: this.data.type == "text" ? true : false });
+            material = new this.THREE.MeshStandardMaterial({ map: texture, side: this.THREE.DoubleSide, transparent: (this.data.type == "text" || this.TRANSPARENCY) });
 
             if (this.shadowGeometry)
             {
@@ -286,7 +289,7 @@ class PaperElement {
             this.shadowMesh = undefined;
         }
 
-        if (this.data.type == "text")
+        if (this.data.type == "text" || this.data.src.indexOf("decorations") != -1)
         {
             this.mesh.frustumCulled = false;
         }
@@ -300,10 +303,13 @@ class PaperElement {
             this.shadowMesh.bind(this.skeleton);
         }
 
-        this.scene.add(this.mesh);
+        if (this.mesh)
+        {
+            this.scene.add(this.mesh);
+        }
 
         // Only add to scene if this is an image
-        if (this.data.type == "image") {
+        if (this.shadowMesh && this.data.type == "image") {
             this.scene.add(this.shadowMesh);
         }
     }

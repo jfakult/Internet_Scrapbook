@@ -21,6 +21,7 @@ class Cover {
         })
 
         const textureFrontCover = loader.load("images/cover_front.png", function (tex) {
+            tex.colorSpace = THREE.SRGBColorSpace;
         })
 
         let materialFront;
@@ -33,7 +34,7 @@ class Cover {
                 new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide }),
                 new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide }),
                 new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide }),
-                new this.THREE.MeshBasicMaterial({ map: textureFrontCover, side: this.THREE.DoubleSide, transparent: true }),
+                new this.THREE.MeshBasicMaterial({ map: textureFrontCover, side: this.THREE.DoubleSide, transparent: false }),
                 new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide }),
             ]
             materialBack = new this.THREE.MeshStandardMaterial({ map: this.textureBack, side: this.THREE.DoubleSide });

@@ -1,10 +1,35 @@
 import { easeInOutCubic } from './Helpers.js'
 import PaperElement from './PaperElement.js';
 
+let decorations = [
+    "images/decorations/icons8-bahai-star-96.png",
+    "images/decorations/icons8-flower-96.png",
+    "images/decorations/icons8-heart-94.png",
+    "images/decorations/icons8-sakura-48.png",
+    "images/decorations/icons8-tech-60.png",
+    "images/decorations/icons8-circuit-100.png",
+    "images/decorations/icons8-grapes-60.png",
+    "images/decorations/icons8-heart-96.png",
+    "images/decorations/icons8-settings-96.png",
+    "images/decorations/icons8-technology-100.png",
+    "images/decorations/icons8-circuit-96.png",
+    "images/decorations/icons8-green-heart-96.png",
+    "images/decorations/icons8-lavender-100.png",
+    "images/decorations/icons8-star-96.png",
+    "images/decorations/icons8-tulip-96.png",
+    "images/decorations/icons8-heart-64.png",
+    "images/decorations/icons8-lavender-96.png",
+    "images/decorations/icons8-star-of-bethlehem-96.png",
+    "images/decorations/icons8-vine-64.png"
+]
+
 class Paper {
     constructor(THREE, scene, pageNumber, pagePosition, paperElementData, options) {
         this.THREE = THREE;
         this.scene = scene;
+
+        this.MAX_DECORATIONS_PER_PAGE = 3;
+        this.PAGE_RATIO = options.paperHeight / options.paperWidth;
 
         this.options = options;
         this.pageNumber = pageNumber;
@@ -65,10 +90,49 @@ class Paper {
 
             // This offset is used to make sure images don't overlap
             // Could do it with text but it's not as important
-            if (element.type == "image" && element.src.indexOf("shadow") == -1) {
+            if (element.type == "image" && element.src.indexOf("shadow") == -1 && element.src.indexOf("decoration") == -1) {
                 pageIndex += 1;
             }
         })
+
+        // Add in decorations
+        for (let pageSideIndex = 0; pageSideIndex < 2; pageSideIndex++) {
+            const pageSide = pageSideIndex == 0 ? "front" : "back";
+            const numDecorations = Math.floor(Math.random() * this.MAX_DECORATIONS_PER_PAGE) + 1;
+            for (let i = 0; i < numDecorations; i++) {
+                const decSrc = decorations[Math.floor(Math.random() * decorations.length)];
+                const decWidth = Math.random() * 0.1 + 0.06;
+                const isLeft = Math.random() < 0.5;
+                const isTop = Math.random() < 0.5;
+
+                const leftOffset = Math.random() * 0.03;
+                const topOffset = Math.random() * 0.03;
+                let decLeft = isLeft ? 0.03 + leftOffset: (0.9 - decWidth) - leftOffset;
+                if (pageSide == "back") {
+                    // Patchy fix since I incorrectly set the left pos for elemson the back of the page
+                    if (isLeft)
+                    {
+                        decLeft += decWidth / 3;
+                    }
+                    else
+                    {
+                        decLeft -= decWidth / 4;
+                    }
+                }
+                let decTop = isTop ? 0.025 + topOffset : (0.99 - decWidth) - topOffset;
+                const randomDecoration = {
+                    "type": "image",
+                    "src": decSrc,
+                    "page_side": pageSide,
+                    "width": decWidth,
+                    "left": decLeft,
+                    "top": decTop,
+                    "pageNumber": this.pageNumber,
+                }
+                const paperElement = new PaperElement(this.THREE, this.scene, randomDecoration, this.options.paperWidth, this.options.paperHeight, this.skeleton, this.zTranslate, (pageIndex + 1) / 4);
+                this.paperElements.push(paperElement);
+            }
+        }
     }
 
     buildSkeleton(num_bones, paperWidth, show_bones) {

@@ -202,7 +202,7 @@ class Interactions {
         // Only center if dynamic camera is enabled. Thus we can override to move to the right still
         if (this.centerOnBook && this.DYNAMIC_CAMERA)
         {
-                cameraTargetX = -(this.sheets[0].options.paperWidth / 2 + this.cover.options.BOOK_DEPTH / 2 + this.cover.options.COVER_THICKNESS / 2)
+                cameraTargetX = -(this.sheets[0].options.paperWidth / 2 + this.cover.options.BOOK_DEPTH / 2)
         }
         
         //this.camera.position.x += Math.pow(Math.pow(cameraTargetX - this.camera.position.x, 2), 0.5) * this.options.CAMERA_SPEED

@@ -11,7 +11,13 @@
 			}
 			canvas {
 				opacity: 0;
-				transition: opacity 2s ease-in-out;
+				z-index: 1;
+
+				/* Slow and dramatic in the first half of the fade-in, then once the user spots it quickly move to opaque */
+				transition-timing-function: cubic-bezier(.8,.07,.51,.99) !important;
+
+				/* Set in main.js on canvas init */
+				/* transition: opacity 8s ease-in-out; */
 			}
 			.fade-in {
 				opacity: 1;
@@ -19,9 +25,28 @@
 			audio {
 				display: none;
 			}
+			#splashText {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				font-family: 'Courier New', Courier, monospace;
+				font-size: 2em;
+				text-align: center;
+				z-index: -1;
+				line-height: 3em;
+			}
+			#splashText span {
+				color: white;
+				opacity: 0;
+				transition: opacity 2s ease-in-out;
+			}
 		</style>
 	</head>
 	<body>
+		<div id="splashText">
+			<span></span>
+		</div>
 		<audio id="audio" controls autoplay>
 			<source src="Transatlantic_Kaleidoscope.mp3" type="audio/mpeg">
 			Your browser does not support the audio element.

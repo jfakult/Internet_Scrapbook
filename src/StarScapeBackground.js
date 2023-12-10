@@ -6,12 +6,29 @@ class StarScapeBackground {
         this.scene = scene;
         this.stars = [];
 
+        this.isDesktop = window.innerWidth > window.innerHeight
+
         this.addSphere();
     }
 
     addSphere() {
+        let zMin = -2000;
+        let zMax = 1000;
+        let zInc = 4;
+        let xMax = 1200;
+        let yMax = 900;
+
+        // Closer, fewer, and more densly packed stars on mobile
+        if (!this.isDesktop) {
+            zMin -1000;
+            zMax = 100;
+            zInc = 2;
+            xMax = 400;
+            yMax = 800;
+
+        }
         // The loop will move from z position of -1000 to z position 1000, adding a random particle at each position. 
-        for ( var z= -2000; z < 1000; z+=4 ) {
+        for ( var z = zMin; z < zMax; z += zInc ) {
 
             const red = Math.random() * 0.8 + 0.2;
             const blue = Math.random() * 0.8 + 0.2;
@@ -23,15 +40,12 @@ class StarScapeBackground {
 
             // This time we give the sphere random x and y positions between -500 and 500
             // Don't let them be too close to 0 or they may clip through the book
-            let xPos = Math.random() * 2500 - 1250;
-            while (Math.abs(xPos) < 20)
+            let xPos = Math.random() * (xMax * 2) - xMax;
+            let yPos = Math.random() * (yMax * 2) - yMax;
+            while (Math.abs(xPos) < 50 && Math.abs(yPos) < 50)
             {
-                xPos = Math.random() * 2500 - 1250;
-            }
-            let yPos = Math.random() * 2500 - 1250;
-            while (Math.abs(yPos) < 20)
-            {
-                yPos = Math.random() * 3000 - 1500;
+                xPos = Math.random() * (xMax * 2) - xMax;
+                yPos = Math.random() * (yMax * 2) - yMax;
             }
 
             sphere.position.x = xPos;

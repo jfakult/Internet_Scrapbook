@@ -19,18 +19,29 @@ const gui_settings = {
     ORTHOGRAPHIC_CAMERA: false,
 };
 
+const PRESENTATION_MODE = false;
+
 const CAMERA_FOV = 65;
 
 let animationStarted = false;
 let loadInAnimation = true;
 let loadAnimationStartTime;
 const CAM_START_DISTANCE = 250;
-const LOAD_IN_ANIMATION_TIME = 2200; // 22000
-const FADE_IN_TIME = 800; // 8000
+const LOAD_IN_ANIMATION_TIME = PRESENTATION_MODE ? 22000 : 5000;
+const FADE_IN_TIME = PRESENTATION_MODE ? 8000 : 3000;
+const isDesktop = window.innerWidth > window.innerHeight
+
+const splashText = document.getElementById("splashText").children[0];
+
+if (!PRESENTATION_MODE) {
+    splashText.setAttribute("style", "opacity: 1;")
+    splashText.innerHTML = isDesktop ? "Arrow Keys<br/>to Interact" : "Swipe<br/>to Interact"
+}
 
 const renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
 renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.domElement.setAttribute("style", "transition: opacity " + (FADE_IN_TIME / 1000) + "s;")
 document.body.appendChild( renderer.domElement );
 
 const scene = new THREE.Scene();
@@ -302,13 +313,16 @@ interactionManager.updateAll();
 renderer.render( scene, camera );
 
 setTimeout(() => {
-    // Add fade-in class
+    // Then continue with the animation loop
+    requestAnimationFrame( animate );
+
     renderer.domElement.classList.add("fade-in");
     setTimeout(() => {
         animationStarted = true;
         loadAnimationStartTime = Date.now() - 0;
     }, FADE_IN_TIME);
 
-    // Then continue with the animation loop
-    requestAnimationFrame( animate );
-}, 1000)
+    splashText.setAttribute("style", "opacity: 0;");
+
+    // Wait a little longer when not in presentation mode to wait for the splash text to fade out
+}, PRESENTATION_MODE ? 1000 : 2500)

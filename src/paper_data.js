@@ -297,7 +297,8 @@ const PAPER_DATA = {
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/1977_ethernet_tightrope.jpeg",
+                //"src": "images/page_images/1977_ethernet_tightrope.jpeg",
+                "src": "images/page_images_modified/swap.jpeg",
                 "width": 0.62,
                 "top": 0.55 * PAPER_SIZE_RATIO,
                 "left": 0.2,

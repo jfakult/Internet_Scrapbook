@@ -10,23 +10,28 @@ class PaperElement {
         this.pageSide = data.page_side;
         this.pageIndex = pageIndex;
         this.TEXT_LINE_SPACING = 1.2;
+        this.SHADOW_SIZE_FACTOR = 1.05;
+
+        this.drop_shadow_texture = new this.THREE.TextureLoader().load('images/drop_shadow_256.png');
 
         // So that later images appear on top of earlier ones
-        const zExtra = 0.03 * pageIndex;
+        const zExtra = 0.02 * pageIndex;
         if (this.pageSide == "front")
         {
             // 0.1 for now. Might compute based on num pages and book depth later.
             // Probably fine to be even more, as long as page elements underneath the current page are not visible
-            this.zTranslate += 0.1 - zExtra;
+            this.zTranslate += 0.05 + zExtra;
         }
         else
         {
-            this.zTranslate -= 0.1 - zExtra;
+            this.zTranslate -= 0.05 + zExtra;
         }
 
         this.texture = undefined;
         this.geometry = undefined;
+        this.shadowGeometry = undefined;
         this.mesh = undefined;
+        this.shadowMesh = undefined;
 
         // Needs call backs in order to have the asynchronous texture load
         // More specifically, we need to grab the image ratio before we can initialize the geometry
@@ -62,6 +67,11 @@ class PaperElement {
             const loader = new this.THREE.TextureLoader();
             this.texture = loader.load(imageSrc, (tex) => {
                 // Update texture settings after it has loaded
+                if (this.pageSide == "back") {
+                    tex.wrapS = this.THREE.RepeatWrapping;
+                    tex.repeat.x = - 1;
+                }
+
                 imageRatio = tex.image.width / tex.image.height;
 
                 if (!height) {
@@ -99,15 +109,21 @@ class PaperElement {
                 return
             }
 
-            const textCanvas = document.createElement('canvas');
-            // Higher quality means the text is rendered onta a larger canvas
-            // 64 seems to be good enough
-            const CANVAS_QUALITY = 256;
-            textCanvas.height = CANVAS_QUALITY * textContent.split("\n").length * this.TEXT_LINE_SPACING;
-            textCanvas.width = CANVAS_QUALITY * 64;
-            const textCtx = textCanvas.getContext('2d');
+            if (data.content.indexOf("Baby Art") != -1) {
+                console.log("Found baby art");
+                this.zTranslate -= 0.5
+
+            }
 
             document.fonts.ready.then(() => {
+
+                const textCanvas = document.createElement('canvas');
+                // Higher quality means the text is rendered onto a larger canvas before texturing the image
+                // 32 seems to sufficient for all but very large text. 64 runs with no issues on hardware I tested
+                const CANVAS_QUALITY = 64;
+                textCanvas.height = CANVAS_QUALITY * textContent.split("\n").length * this.TEXT_LINE_SPACING;
+                textCanvas.width = CANVAS_QUALITY * 64;
+                const textCtx = textCanvas.getContext('2d');
 
                 textCanvas.width = 0;
                 textContent.split("\n").forEach(line => {
@@ -140,15 +156,16 @@ class PaperElement {
                 });
 
                 // Convert total width to percentage of page width
-                const textboxRatio = textCanvas.width / textCanvas.height;
-                width = (height * textboxRatio) / paperRatio;
-                height *= textContent.split("\n").length;
+                const textLineRatio = textCanvas.width / (textCanvas.height / (textContent.split("\n").length * this.TEXT_LINE_SPACING))
+                width = ((height * textLineRatio) / paperRatio);
+                height *= textContent.split("\n").length * this.TEXT_LINE_SPACING;
                 left = (left - 0.5);
                 top = -((top - 0.5) + height / 2);
 
                 if (width / 2 + left > 0.5 || left - width / 2 < -0.5 || top + height / 2 > 0.5 || top - height / 2 < -0.5) {
                     // I don't want to handle bone indexing off the page. Keeping all vertices in between bones makes things simple
                     console.log("Text dimensions are invalid are go off the page. Refusing to show the paper element", data);
+                    this.mesh = {}
                     return
                 }
 
@@ -177,6 +194,12 @@ class PaperElement {
         this.geometry = new this.THREE.PlaneGeometry(width * this.paperWidth, height * this.paperHeight, this.NUM_SEGMENTS, 1);
         this.geometry.translate(left * this.paperWidth, top * this.paperHeight, this.zTranslate);
 
+        if (this.data.type == "image" && this.data.src.indexOf("shadow") == -1) {
+            this.shadowGeometry = new this.THREE.PlaneGeometry(width * this.paperWidth * this.SHADOW_SIZE_FACTOR, height * this.paperHeight * this.SHADOW_SIZE_FACTOR, this.NUM_SEGMENTS, 1);
+            let shadowTranslate = this.pageSide == "front" ? -0.03 : 0.03;
+            this.shadowGeometry.translate(left * this.paperWidth, top * this.paperHeight, this.zTranslate + shadowTranslate);
+        }
+
         this.initSkinIndicesAndWeights(texture);
     }
 
@@ -196,12 +219,14 @@ class PaperElement {
 
             // Because the image vertices may be misaligned with the bones, we need to ensure weights are properly assigned
             // If the vertex lies exactly on the bone, things are simple
-            if (boneIndex < 0 || boneIndex >= this.skeleton.bones.length) {
+            if (boneIndex < 0 || boneIndex >= this.skeleton.bones.length - 1) {
                 console.log("Warning: this element goes outside of the page, mapping to edge bones", this.data);
-                index = Math.min(Math.max(boneIndex, 0), this.skeleton.bones.length - 1);
+                let index = Math.min(Math.max(boneIndex, 0), this.skeleton.bones.length - 1);
+
                 indices = new this.THREE.Vector4(index, 0, 0, 0);
                 weights = new this.THREE.Vector4(1, 0, 0, 0);
             }
+            // If it lies on a bone exactly
             else if (boneIndex == Math.floor(boneIndex)) {
                 indices = new this.THREE.Vector4(boneIndex, 0, 0, 0);
                 weights = new this.THREE.Vector4(1, 0, 0, 0);
@@ -222,27 +247,65 @@ class PaperElement {
         this.geometry.setAttribute('skinIndex', new this.THREE.Uint16BufferAttribute(flattenedIndices, 4));
         this.geometry.setAttribute('skinWeight', new this.THREE.Float32BufferAttribute(flattenedWeights, 4));
 
+        if (this.shadowGeometry)
+        {
+            this.shadowGeometry.setAttribute('skinIndex', new this.THREE.Uint16BufferAttribute(flattenedIndices, 4));
+            this.shadowGeometry.setAttribute('skinWeight', new this.THREE.Float32BufferAttribute(flattenedWeights, 4));
+        }
+
         this.initMesh(texture);
     }
 
     initMesh(texture) {
         let material;
+        let shadowMaterial;
         if (true || this.options.SHOW_TEXTURE) {
             material = new this.THREE.MeshStandardMaterial({ map: texture, side: this.THREE.DoubleSide, transparent: this.data.type == "text" ? true : false });
+
+            if (this.shadowGeometry)
+            {
+                shadowMaterial = new this.THREE.MeshStandardMaterial({ map: this.drop_shadow_texture, side: this.THREE.DoubleSide, transparent: true });
+            }
         }
         else {
             material = new this.THREE.MeshBasicMaterial({ color: 0xaaffaa, side: this.THREE.DoubleSide, wireframe: true });
         }
 
-        material.castShadow = true;
-        material.receiveShadow = true;
+        //material.castShadow = true;
+        //material.receiveShadow = true;
 
         //const material = new this.THREE.MeshBasicMaterial({ map: texture, side: this.THREE.DoubleSide });
         this.mesh = new this.THREE.SkinnedMesh(this.geometry, material);
 
+        if (this.shadowGeometry)
+        {
+            this.shadowMesh = new this.THREE.SkinnedMesh(this.shadowGeometry, shadowMaterial);
+        }
+        else
+        {
+            this.shadowMesh = undefined;
+        }
+
+        if (this.data.type == "text")
+        {
+            this.mesh.frustumCulled = false;
+        }
+
+        //this.mesh.visible = false;
+
         this.mesh.bind(this.skeleton);
 
+        if (this.shadowGeometry)
+        {
+            this.shadowMesh.bind(this.skeleton);
+        }
+
         this.scene.add(this.mesh);
+
+        // Only add to scene if this is an image
+        if (this.data.type == "image") {
+            this.scene.add(this.shadowMesh);
+        }
     }
 
     // Basically just hides the mesh if it it doesn't need to be rendered

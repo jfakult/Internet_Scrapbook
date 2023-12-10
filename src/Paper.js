@@ -36,6 +36,10 @@ class Paper {
         this.skinIndicesAndWeights = this.buildPaperSkinIndicesAndWeights(this.geometry, this.options.paperWidth, this.options.NUM_BONES);
         this.mesh = this.buildMesh(this.geometry, this.skeleton, this.skinIndicesAndWeights["indices"], this.skinIndicesAndWeights["weights"]);
 
+        // Hide the mesh so that the renderer doesn't need to work so hard
+        // We will unhide elements 1 frame at a time
+        //this.mesh.visible = false;
+
         this.scene.add(this.mesh)
         if (options.SHOW_BONES) {
             this.boneSpheres.forEach(sphere => this.scene.add(sphere))
@@ -53,12 +57,17 @@ class Paper {
             return;
         }
 
-        let pageIndex = paperElementData.length
+        let pageIndex = 0;
         paperElementData.forEach(element => {
             element.pageNumber = this.pageNumber;
-            const paperElement = new PaperElement(this.THREE, this.scene, element, this.options.paperWidth, this.options.paperHeight, this.skeleton, this.zTranslate, pageIndex / paperElementData.length);
+            const paperElement = new PaperElement(this.THREE, this.scene, element, this.options.paperWidth, this.options.paperHeight, this.skeleton, this.zTranslate, pageIndex / 4);
             this.paperElements.push(paperElement);
-            pageIndex -= 1
+
+            // This offset is used to make sure images don't overlap
+            // Could do it with text but it's not as important
+            if (element.type == "image" && element.src.indexOf("shadow") == -1) {
+                pageIndex += 1;
+            }
         })
     }
 

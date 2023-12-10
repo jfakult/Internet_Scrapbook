@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import Paper from './Paper.js';
 import Cover from './Cover.js';
-import { easeInOutCubic } from './Helpers.js';
+import { easeInOutCubic, degToRad } from './Helpers.js';
 //import { initGUI } from './Gui.js';
 import PAPER_DATA from './paper_data.js';
 import Interactions from './Interactions.js';
@@ -19,25 +19,18 @@ const gui_settings = {
     ORTHOGRAPHIC_CAMERA: false,
 };
 
-const CAMERA_FOV = 45;
+const CAMERA_FOV = 65;
 
 let animationStarted = false;
 let loadInAnimation = true;
 let loadAnimationStartTime;
 const CAM_START_DISTANCE = 250;
-const LOAD_IN_ANIMATION_TIME = 19000; // 24000
+const LOAD_IN_ANIMATION_TIME = 2200; // 22000
+const FADE_IN_TIME = 800; // 8000
 
 const renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
 renderer.setSize( window.innerWidth, window.innerHeight );
-setTimeout(() => {
-    // Add fade-in class
-    renderer.domElement.classList.add("fade-in");
-    setTimeout(() => {
-        animationStarted = true;
-        loadAnimationStartTime = Date.now() - 0;
-    }, 8000); // 8000
-}, 1000)
 document.body.appendChild( renderer.domElement );
 
 const scene = new THREE.Scene();
@@ -131,12 +124,13 @@ let cover;
 let sheets = [];
 let interactionManager;
 let background;
+let renderQueue = [];
 const PAPER_WIDTH = 11.69;
 const PAPER_HEIGHT = 16.54;
 const COVER_THICKNESS = 0.3;
 
 // Zoom out a little more if the device is in portrait mode
-const ZOOM_FACTOR = window.innerWidth > window.innerHeight ? 0.75 : 1.1;
+const ZOOM_OUT_FACTOR = window.innerWidth > window.innerHeight ? 1.15 : 1.6;
 // Given FOV and paper height, calculate camera distance with a small margin
 let camDistance
 function init()
@@ -177,7 +171,7 @@ function init()
         CAMERA_SPEED: 0.02,
     }
 
-    camDistance = paperOptions.paperHeight / Math.tan(CAMERA_FOV / 2) * ZOOM_FACTOR;
+    camDistance = (ZOOM_OUT_FACTOR * paperOptions.paperHeight / 2) / Math.tan(degToRad(CAMERA_FOV) / 2);
 
     if (gui_settings.SHOW_COVER) {
         cover = new Cover(THREE, scene, coverOptions)
@@ -185,7 +179,7 @@ function init()
 
     sheets = []
     for (let i = 0; i < gui_settings.NUM_PAGES; i++) {
-        let pageData = undefined;
+        let pageData = [];
         if ((gui_settings.NUM_PAGES - i) in PAPER_DATA.sheets) {
             pageData = PAPER_DATA.sheets[gui_settings.NUM_PAGES - i];
         }
@@ -195,6 +189,15 @@ function init()
         const pagePosition = 1 - (i + 1) / (gui_settings.NUM_PAGES + 1)
 
         const paper = new Paper(THREE, scene, gui_settings.NUM_PAGES - i, pagePosition, pageData, paperOptions)
+
+        /*
+        renderQueue.push([i, false])
+
+        pageData.forEach((data, index) => {
+            renderQueue.push([i, index + 1])
+        })
+        */
+
         sheets.push(paper)
     }
 
@@ -234,12 +237,27 @@ function init()
     scene.add(light2);
 }
 
+function show_elem(index) {
+    index = Math.floor(index)
+    if (index < renderQueue.length) {
+        const sheetIndex = renderQueue[index][0];
+        const elemIndex = renderQueue[index][1];
+        if (elemIndex)
+        {
+            //sheets[sheetIndex].paperElements[elemIndex - 1].mesh.visible = true;
+        }
+        else
+        {
+            sheets[sheetIndex].mesh.visible = true;
+        }
+    }
+}
+
 let animationLoadHandler = -1;
 let starSpeed = 0.05;
 let lastExtraDistance = CAM_START_DISTANCE;
+let framesPerCull = 10;
 function animate() {
-    //controls.update();
-
     if (loadInAnimation)
     {
         if (animationStarted)
@@ -272,10 +290,25 @@ function animate() {
 
     background.animateStars(starSpeed);
 
-    requestAnimationFrame( animate );
+    renderer.render( scene, camera );
 
-	renderer.render( scene, camera );
+    requestAnimationFrame( animate );
 }
 
-init()
-animate()
+init();
+
+// Get the first render out of the way to precompile all shaders, load in textures, etc
+interactionManager.updateAll();
+renderer.render( scene, camera );
+
+setTimeout(() => {
+    // Add fade-in class
+    renderer.domElement.classList.add("fade-in");
+    setTimeout(() => {
+        animationStarted = true;
+        loadAnimationStartTime = Date.now() - 0;
+    }, FADE_IN_TIME);
+
+    // Then continue with the animation loop
+    requestAnimationFrame( animate );
+}, 1000)

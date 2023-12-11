@@ -27,8 +27,8 @@ let animationStarted = false;
 let loadInAnimation = true;
 let loadAnimationStartTime;
 const CAM_START_DISTANCE = 250;
-const LOAD_IN_ANIMATION_TIME = PRESENTATION_MODE ? 22000 : 500;  // 22000 : 5000
-const FADE_IN_TIME = PRESENTATION_MODE ? 8000 : 300;             // 8000 : 3000
+const LOAD_IN_ANIMATION_TIME = PRESENTATION_MODE ? 21000 : 5000;  // 22000 : 5000
+const FADE_IN_TIME = PRESENTATION_MODE ? 8000 : 3000;             // 8000 : 3000
 const isDesktop = window.innerWidth > window.innerHeight
 
 const splashText = document.getElementById("splashText").children[0];
@@ -238,7 +238,8 @@ function init()
     const intensity = 1;
     const light1 = new THREE.DirectionalLight(color, intensity);
     light1.castShadow = true;
-    light1.position.set(paperOptions.paperWidth / 2, 0, camDistance * 1.25);
+    // Push it a little farther to the right so that reflections aren't too strong
+    light1.position.set(paperOptions.paperWidth * 0.75, 0, camDistance * 1.25);
     light1.target.position.set(0, 0, 0);
     const light2 = new THREE.DirectionalLight(color, intensity);
     light2.castShadow = true;

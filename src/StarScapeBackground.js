@@ -15,7 +15,7 @@ class StarScapeBackground {
         let zMin = -2000;
         let zMax = 1000;
         let zInc = 4;
-        let xMax = 1200;
+        let xMax = 1500;
         let yMax = 900;
 
         // Closer, fewer, and more densly packed stars on mobile

@@ -295,10 +295,7 @@ class PaperElement {
             this.shadowMesh = undefined;
         }
 
-        if (this.data.type == "text" || this.data.src.indexOf("decorations") != -1)
-        {
-            this.mesh.frustumCulled = false;
-        }
+        this.mesh.frustumCulled = false;
 
         //this.mesh.visible = false;
 

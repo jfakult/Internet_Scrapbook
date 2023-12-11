@@ -27,8 +27,8 @@ let animationStarted = false;
 let loadInAnimation = true;
 let loadAnimationStartTime;
 const CAM_START_DISTANCE = 250;
-const LOAD_IN_ANIMATION_TIME = PRESENTATION_MODE ? 22000 : 5000;
-const FADE_IN_TIME = PRESENTATION_MODE ? 8000 : 3000;
+const LOAD_IN_ANIMATION_TIME = PRESENTATION_MODE ? 22000 : 500;  // 22000 : 5000
+const FADE_IN_TIME = PRESENTATION_MODE ? 8000 : 300;             // 8000 : 3000
 const isDesktop = window.innerWidth > window.innerHeight
 
 const splashText = document.getElementById("splashText").children[0];
@@ -161,7 +161,7 @@ function init()
         SHOW_TEXTURE: gui_settings.SHOW_TEXTURE,
         BOOK_OPEN: gui_settings.BOOK_OPEN,
         SHOW_COVER: gui_settings.SHOW_COVER,
-        textureFile : "images/cover.jpg"
+        textureFile : "images/cover_light.jpeg"
     }
 
     const paperOptions = {
@@ -174,7 +174,7 @@ function init()
         COVER_THICKNESS: coverOptions.COVER_THICKNESS,
         SHOW_TEXTURE : gui_settings.SHOW_TEXTURE,
         SHOW_BONES : gui_settings.SHOW_BONES,
-        textureFile: "images/paper.jpg",
+        textureFile: "images/paper_light.jpg",
     }
 
     const interactionOptions = {
@@ -234,15 +234,15 @@ function init()
 
     interactionManager = new Interactions(THREE, camera, camDistance, cover, sheets, interactionOptions);
 
-    const color = 0xffffff
+    const color = 0xffffff;
     const intensity = 1;
     const light1 = new THREE.DirectionalLight(color, intensity);
     light1.castShadow = true;
-    light1.position.set(gui_settings.BOOK_DEPTH, 0, gui_settings.BOOK_DEPTH * 2);
+    light1.position.set(paperOptions.paperWidth / 2, 0, camDistance * 1.25);
     light1.target.position.set(0, 0, 0);
     const light2 = new THREE.DirectionalLight(color, intensity);
     light2.castShadow = true;
-    light2.position.set(-gui_settings.BOOK_DEPTH, 0, gui_settings.BOOK_DEPTH * 2);
+    light2.position.set(-paperOptions.paperWidth * 1.5, 0, camDistance * 1.25);
     light2.target.position.set(0, 0, 0);
     scene.add(light1);
     scene.add(light2);

@@ -157,7 +157,7 @@ class Paper {
             if (show_bones) {
                 // Add a sphere to visualize the bone
                 const sphereGeometry = new this.THREE.SphereGeometry(0.1, 32, 32);
-                const sphereMaterial = new this.THREE.MeshStandardMaterial({ color: 0x00ff00 });
+                const sphereMaterial = new this.THREE.MeshBasicMaterial({ color: 0x00ff00 });
                 let sphere = new this.THREE.Mesh(sphereGeometry, sphereMaterial);
                 sphere.name = "boneSphere" + i;
                 this.boneSpheres.push(sphere);
@@ -216,7 +216,12 @@ class Paper {
     buildMesh(geometry, skeleton, indices, weights) {
         let material;
         if (this.options.SHOW_TEXTURE) {
-            material = new this.THREE.MeshStandardMaterial({ map: this.texture, side: this.THREE.DoubleSide });
+            //material = new this.THREE.MeshStandardMaterial({ map: this.texture, side: this.THREE.DoubleSide });
+            material = new this.THREE.MeshPhongMaterial({ map: this.texture,
+                side: this.THREE.DoubleSide,
+                specular: 0x333333,
+                shininess: 80,
+            });
         }
         else {
             material = new this.THREE.MeshBasicMaterial({ color: 0xffaaaa, side: this.THREE.DoubleSide, wireframe: true });

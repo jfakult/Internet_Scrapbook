@@ -87,7 +87,6 @@ class PaperElement {
                 if ((width + left > 1 || height + top > 1) || (width < 0 || height < 0) || (left < 0 || top < 0) || (left > 1 || top > 1)) {
                     // I don't want to handle bone indexing off the page. Keeping all vertices in between bones makes things simple
                     console.log("Image dimensions are invalid are go off the page. Refusing to show the paper element", data);
-                    console.log("Page num: ", this.pageIndex, "left: ", left, "width: ", width, "top: ", top, "height: ", height, "page side: ", this.pageSide)
                     return
                 }
 
@@ -263,7 +262,14 @@ class PaperElement {
         let material;
         let shadowMaterial;
         if (true || this.options.SHOW_TEXTURE) {
-            material = new this.THREE.MeshStandardMaterial({ map: texture, side: this.THREE.DoubleSide, transparent: (this.data.type == "text" || this.TRANSPARENCY) });
+            const needsShininess = this.data.type == "image" && this.data.src.indexOf("shadow") == -1;
+
+            material = new this.THREE.MeshPhongMaterial({ map: this.texture,
+                side: this.THREE.DoubleSide,
+                specular: needsShininess ? 0x080808 : 0x000000,
+                shininess: needsShininess ? 1500 : 0,
+                transparent: (this.data.type == "text" || this.TRANSPARENCY)
+            });
 
             if (this.shadowGeometry)
             {

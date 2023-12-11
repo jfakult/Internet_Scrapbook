@@ -11,16 +11,17 @@ class Cover {
         this.geometrySpine = new THREE.BoxGeometry(this.options.COVER_THICKNESS - 0.01, this.options.coverHeight - 0.01, this.options.BOOK_DEPTH - 0.01); // Simple inelegant way to avoid z-fighting
 
         const loader = new THREE.TextureLoader();
-        this.textureFront = loader.load(this.options.textureFile, function (tex) {
-            // Update texture settings after it has loaded
+        this.texture = loader.load(this.options.textureFile, function (tex) {
+            // Scale to 50% and tile
+            tex.wrapS = THREE.MirroredRepeatWrapping;
+            tex.wrapT = THREE.MirroredRepeatWrapping;
+            tex.repeat.set(2, 2);
+
+            // Don't allow it's color to be affected by lights
+            tex.colorSpace = THREE.SRGBColorSpace;
         });
 
-        this.textureFront.wrapS = this.THREE.RepeatWrapping; // Enable wrapping for both horizontal and vertical directions
-        this.textureFront.repeat.x = -1;
-        this.textureBack = loader.load(this.options.textureFile, function (tex) {
-        })
-
-        const textureFrontCover = loader.load("images/cover_front.png", function (tex) {
+        this.textureCover = loader.load("images/cover_front.png", function (tex) {
             tex.colorSpace = THREE.SRGBColorSpace;
         })
 
@@ -30,14 +31,14 @@ class Cover {
         if (this.options.SHOW_TEXTURE) {
             //materialFront = new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide });
             materialsFront = [ 
-                new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide }),
-                new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide }),
-                new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide }),
-                new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide }),
-                new this.THREE.MeshBasicMaterial({ map: textureFrontCover, side: this.THREE.DoubleSide, transparent: false }),
-                new this.THREE.MeshStandardMaterial({ map: this.textureFront, side: this.THREE.DoubleSide }),
+                new this.THREE.MeshStandardMaterial({ map: this.texture, side: this.THREE.DoubleSide, roughness: 0.65, metalness: 1 }),
+                new this.THREE.MeshStandardMaterial({ map: this.texture, side: this.THREE.DoubleSide, roughness: 0.65, metalness: 1 }),
+                new this.THREE.MeshStandardMaterial({ map: this.texture, side: this.THREE.DoubleSide, roughness: 0.65, metalness: 1 }),
+                new this.THREE.MeshStandardMaterial({ map: this.texture, side: this.THREE.DoubleSide, roughness: 0.65, metalness: 1 }),
+                new this.THREE.MeshBasicMaterial({ map: this.textureCover, side: this.THREE.DoubleSide, transparent: false }),
+                new this.THREE.MeshStandardMaterial({ map: this.texture, side: this.THREE.DoubleSide, roughness: 0.65, metalness: 1 }),
             ]
-            materialBack = new this.THREE.MeshStandardMaterial({ map: this.textureBack, side: this.THREE.DoubleSide });
+            materialBack = new this.THREE.MeshStandardMaterial({ map: this.texture, side: this.THREE.DoubleSide, roughness: 0.65, metalness: 1 });
         }
         else {
             materialFront = new this.THREE.MeshBasicMaterial({ color: 0xaaaaaa, side: this.THREE.DoubleSide, wireframe: true });

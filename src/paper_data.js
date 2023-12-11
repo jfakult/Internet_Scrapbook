@@ -17,6 +17,21 @@ The top level key corresponds to the PAPER number, not the page (i.e paper 1 has
 
 */
 
+/*
+
+Resources used for aging and face swapping photos:
+https://www.faceswapper.app/
+or
+https://faceswapper.ai/swapper-old
+   (Supposedly works but very slowly): https://webit.ai/portal/apps/faceswap
+
+https://boredhumans.com/age-progression.php
+
+Split gif into frames:  
+https://ezgif.com/split/ezgif-4-64badc6cef.gif
+
+*/
+
 const PAPER_DATA = {
     "sheets": {
         1: [
@@ -71,9 +86,9 @@ const PAPER_DATA = {
                 "type": "text",
                 "content": "Baby Art and\nMac With Mom\nand Dad :)\n     - Mar 1960",
                 "font": "comic sans ms",
-                "height": 0.02,
+                "height": 0.022,
                 "top": 0.65,
-                "left": 0.22,
+                "left": 0.2,
             },
         ],
         2: [
@@ -127,7 +142,7 @@ const PAPER_DATA = {
             "content": "Mac Programming Art\nArt May Become a Global Phenomenon!\n               - Sep 1968",
             "font": "comic sans ms",
             "height": 0.02,
-            "top": 0.85,
+            "top": 0.87,
             "left": 0.4,
         },
         ],
@@ -155,14 +170,14 @@ const PAPER_DATA = {
                 "content": "Mac and Art Getting\nWrapped up in Their Development!\n                  - Nov 1968",
                 "font": "comic sans ms",
                 "height": 0.02,
-                "top": 0.85,
+                "top": 0.87,
                 "left": 0.5,
             },
             // Two images with two text boxes below. Offset with text on the sides
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/1971_first_email.jpeg",
+                "src": "images/page_images_modified/1971_first_email.jpg",
                 "width": 0.5,
                 "top": 0.05,
                 "left": 0.375,
@@ -174,12 +189,12 @@ const PAPER_DATA = {
                 "font": "comic sans ms",
                 "height": 0.015,
                 "top": 0.13,
-                "left": 0.22,
+                "left": 0.21,
             },
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/1972_cabling_mainframes.jpeg",
+                "src": "images/page_images_modified/1972_cabling_mainframes.jpg",
                 "width": 0.6,
                 "top": 0.6 * PAPER_SIZE_RATIO,
                 "left": 0.1,
@@ -199,7 +214,7 @@ const PAPER_DATA = {
             {
                 "page_side": "front",
                 "type": "image",
-                "src": "images/page_images/1973_roller_coaster_2.jpeg",
+                "src": "images/page_images_modified/1973_roller_coaster_2.jpg",
                 "width": 0.6,
                 "top": 0.05,
                 "left": 0.05,
@@ -227,7 +242,7 @@ const PAPER_DATA = {
                 "content": "Dad swinging the boys\n               - Aug 1974",
                 "font": "comic sans ms",
                 "height": 0.02,
-                "top": 0.85,
+                "top": 0.87,
                 "left": 0.55,
             },
             // Two images with two text boxes below. Offset with text on the sides
@@ -244,15 +259,15 @@ const PAPER_DATA = {
                 "type": "text",
                 "content": "The Boys Showing Off\nWith Xerox Alto\nAt their First Tradeshow\n                  - Nov 1974",
                 "font": "comic sans ms",
-                "height": 0.0125,
+                "height": 0.014,
                 "top": 0.2,
                 "left": 0.2,
             },
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/1975_ethernet_adapters.jpeg",
-                "width": 0.575,
+                "src": "images/page_images_modified/1975_ethernet_adapters.jpg",
+                "width": 0.525,
                 "top": 0.75 * PAPER_SIZE_RATIO,
                 "left": 0.1,
             },
@@ -289,7 +304,7 @@ const PAPER_DATA = {
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/1976_ethernet_tightrope_2.jpeg",
+                "src": "images/page_images_modified/1976_ethernet_tightrope_2.jpg",
                 "width": 0.5,
                 "top": 0.05,
                 "left": 0.1,
@@ -297,8 +312,7 @@ const PAPER_DATA = {
             {
                 "page_side": "back",
                 "type": "image",
-                //"src": "images/page_images/1977_ethernet_tightrope.jpeg",
-                "src": "images/page_images_modified/swap.jpeg",
+                "src": "images/page_images_modified/1977_ethernet_tightrope.jpeg",
                 "width": 0.62,
                 "top": 0.55 * PAPER_SIZE_RATIO,
                 "left": 0.2,
@@ -309,8 +323,8 @@ const PAPER_DATA = {
                 "content": "What are these kids up to?!\nNew Ethernet Technology is Fun!\n               - June 1976",
                 "font": "comic sans ms",
                 "height": 0.02,
-                "top": 0.85,
-                "left": 0.5,
+                "top": 0.87,
+                "left": 0.45,
             },
         ],
         6: [
@@ -353,7 +367,7 @@ const PAPER_DATA = {
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/1987_fiber_optic_development.jpeg",
+                "src": "images/page_images_modified/1987_fiber_optic_development.jpg",
                 "width": 0.6,
                 "top": 0.6 * PAPER_SIZE_RATIO,
                 "left": 0.1,
@@ -364,8 +378,8 @@ const PAPER_DATA = {
                 "content": "But the Boys Will Always\nFind Ways to Improve!!\n                      - Mar 1987",
                 "font": "comic sans ms",
                 "height": 0.02,
-                "top": 0.85,
-                "left": 0.4,
+                "top": 0.87,
+                "left": 0.45,
             },
         ],
         7: [
@@ -390,7 +404,7 @@ const PAPER_DATA = {
             {
                 "page_side": "front",
                 "type": "image",
-                "src": "images/page_images/1988_subsea_fiber_optics_2.jpeg",
+                "src": "images/page_images_modified/1988_subsea_fiber_optics_2.jpg",
                 "width": 0.6,
                 "top": 0.6 * PAPER_SIZE_RATIO,
                 "left": 0.3,
@@ -408,7 +422,7 @@ const PAPER_DATA = {
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/1989_subsea_fiber_optics.jpeg",
+                "src": "images/page_images_modified/1989_subsea_fiber_optics.jpg",
                 "width": 0.8,
                 "top": 0.15,
                 "left": 0.1,
@@ -446,7 +460,7 @@ const PAPER_DATA = {
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/1996_suprafax_nap.jpeg",
+                "src": "images/page_images_modified/1996_suprafax_nap.jpg",
                 "width": 0.5,
                 "top": 0.05,
                 "left": 0.4,
@@ -454,11 +468,11 @@ const PAPER_DATA = {
             {
                 "page_side": "back",
                 "type": "text",
-                "content": "Mac, SuprafaxMODEM14400, and Baby\nHave had a long day\n                      - Jan 1996",
+                "content": "Mac, Suprafax 14400, and Baby\nHave had a long day\n                - Jan 1996",
                 "font": "comic sans ms",
-                "height": 0.01,
+                "height": 0.014,
                 "top": 0.25 * PAPER_SIZE_RATIO,
-                "left": 0.25,
+                "left": 0.23,
             },
             {
                 "page_side": "back",
@@ -473,9 +487,9 @@ const PAPER_DATA = {
                 "type": "text",
                 "content": "Player 3 meets Art!\n               - Feb 1996",
                 "font": "comic sans ms",
-                "height": 0.01,
+                "height": 0.015,
                 "top": 0.7,
-                "left": 0.8,
+                "left": 0.77,
             },
         ],
         9: [
@@ -509,7 +523,7 @@ const PAPER_DATA = {
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/2000_computer_learning.jpeg",
+                "src": "images/page_images_modified/2000_computer_learning.jpg",
                 "width": 0.65,
                 "top": 0.05,
                 "left": 0.2,
@@ -529,7 +543,7 @@ const PAPER_DATA = {
                 "font": "comic sans ms",
                 "height": 0.02,
                 "top": 0.9,
-                "left": 0.35,
+                "left": 0.4,
             },
         ],
         10: [
@@ -555,7 +569,7 @@ const PAPER_DATA = {
             {
                 "page_side": "back",
                 "type": "image",
-                "src": "images/page_images/2005_father_confused_camera.jpeg",
+                "src": "images/page_images_modified/2005_father_confused_camera.jpg",
                 "width": 0.7,
                 "top": 0.05,
                 "left": 0.1,
